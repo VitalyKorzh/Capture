@@ -33,6 +33,7 @@ private:
     darray zArray;
     darray rArray;
     darray ni;
+    std::vector <bool> lineCell;
     uint nz;
     uint nr;
     uint nParticles;

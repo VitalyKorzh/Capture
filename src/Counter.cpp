@@ -98,7 +98,7 @@ void Counter::printResult() const
     for (uint iz = 0; iz < nz; iz++)
     {
         for (uint ir = 0; ir < nr; ir++)
-            os << getnCap(iz*nr+ir) << " ";
+            os << getnCap(iz*nr+ir) << " " << reader.lineCell[iz*nr+ir] << " ";
         os << "\n";
     }
 }

@@ -367,6 +367,8 @@ bool InputReader::generateInjectionLine()
     ns = 0;
     sArray.clear();
     index.clear();
+    lineCell.clear();
+    lineCell.resize(nz*nr, false);
 
     double cosTheta = cos(theta);
     double sinTheta = sin(theta);
@@ -513,6 +515,9 @@ bool InputReader::generateInjectionLine()
         errorMessage("линия инжекции не пересекает сетку");
         return false;
     }
+
+    for (uint is = 0; is < ns; is++)
+        lineCell[index[is].first*nr+index[is].second] = true;
 
     return true;
 }

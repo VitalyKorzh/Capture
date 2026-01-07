@@ -77,7 +77,7 @@ bool getUnsignedParameter(std::string line, std::string parameterName, unsigned 
 }
 
 TCanvas* makeCanvas(
-	const char* const cName)
+	const char* const cName, bool grid=true)
 {
 	TCanvas* c;
 	TString cTitle(cName);
@@ -94,7 +94,8 @@ TCanvas* makeCanvas(
 	else
 		c=new TCanvas(cName,cTitle,1,1,950, 900);
 	c->SetBit(kCanDelete);
-	c->SetGrid();
+    if (grid)
+	    c->SetGrid();
 	c->cd();
 	return c;
 }
@@ -103,6 +104,10 @@ class DrawMesh {
 private:
     std::vector <double> zArray;
     std::vector <double> rArray;
+    std::vector <double> ni;
+    std::vector <double> cap;
+    std::vector <bool> lineCell;
+    double nFlyby;
 
     uint nz;
     uint nr;
@@ -203,7 +208,7 @@ public:
     {
         std::ifstream fin;
         fin.open(fileName);
-
+        error = false;
         if (fin.is_open()) 
         {
             std::string line;
@@ -287,6 +292,68 @@ public:
                 fin.close();
                 return;
             }
+
+            if (!readUntil(fin, "# 	ni"))
+            {
+                std::cerr << "не удалось найти ni\n";
+                error = true;
+                fin.close();
+                return;
+            }
+            ni.reserve(nz);
+            for (uint i = 0; i < nz; i++)
+            {
+                char symbol;
+                double val;
+                fin >> symbol >> val;
+                ni.push_back(val);
+            }
+
+            if (fin.fail())
+            {
+                std::cerr << "ошибка чтения ni\n";
+                error = true;
+                fin.close();
+                return;
+            }
+
+            if (!readUntil(fin, "# result:"))
+            {
+                std::cerr << "не удалось найти result:\n";
+                error = true;
+                fin.close();
+                return;
+            }
+
+            std::getline(fin, line);
+
+            StringReader::getDoubleParameter(line, "# nFlyby=", nFlyby);
+            std::getline(fin, line);
+
+            cap.reserve(nr*nz);
+            lineCell.reserve(nr*nz);
+
+            for (uint iz = 0; iz < nz; iz++)
+            {
+                for (uint ir = 0; ir < nr; ir++)
+                {
+                    double val;
+                    bool line;
+                    fin >> val >> line;
+                    cap.push_back(val);
+                    lineCell.push_back(line);
+                }
+            }
+
+            if (fin.fail())
+            {
+                std::cerr << "ошибка чтения result\n";
+                error = true;
+                fin.close();
+                return;
+            }
+
+
         }
         else {
             std::cerr << fileName << " не найден!\n";
@@ -296,13 +363,13 @@ public:
         fin.close();
     }
 
-    void drawMesh(bool drawGrid=true, bool coloBar=true, EColorPalette colorMapName=EColorPalette::kRainBow) 
+    void drawMesh(bool drawGrid=true, bool drawInjectionLine=true, bool coloBar=true, EColorPalette colorMapName=EColorPalette::kRainBow) 
     {
         if (error)
             return;
         TColor::SetPalette(colorMapName, 0);
         TString canvasName = "graph_f";
-        TCanvas *canvas = makeCanvas(canvasName);
+        TCanvas *canvas = makeCanvas(canvasName, false);
         canvas->SetBit(kCanDelete);
 
         TString mg_name = "m_graph";
@@ -315,8 +382,9 @@ public:
         double y[SIZE];
 
         uint n = 0;
-        double max = 1;
-        double min = 0;
+        double max = *std::max_element(cap.begin(), cap.end());
+        double min = *std::min_element(cap.begin(), cap.end());
+        min = 0;
 
         for (uint iz = 0; iz < nz; iz++)
         {
@@ -343,11 +411,26 @@ public:
                 g->SetEditable(false);
                 g->SetBit(kCanDelete);
                 g->SetEditable(kFALSE);
-                auto color = getColor(1, min, max);
-                g->SetFillColor(color);
-                g->SetLineColor(drawGrid ? 1 : color);
-                mg->Add(g);
+                double value = cap[iz*nr+ir];
+                auto color = getColor(value, min, max);
+                if (lineCell[iz*nr+ir])
+                {
+                    g->SetFillColor(color);
+                    g->SetLineColor(drawGrid ? 1 : color);
+                    mg->Add(g, "LF");
+                }
+                else
+                {
+                    g->SetLineColor(drawGrid ? 1 : 0);
+                    g->SetFillColor(0);
+                    mg->Add(g);
+                }
             }
+        }
+
+        if (drawInjectionLine)
+        {
+            
         }
 
         mg->SetTitle(";z, cm;r, cm");
@@ -355,7 +438,7 @@ public:
         mg->GetXaxis()->CenterTitle();
         mg->GetYaxis()->CenterTitle();
 
-        mg->Draw("ALF");
+        mg->Draw("A");
         if (coloBar)
            drawColorBar(0.91, 0.99, 0.1, 0.9, min, max);
     }
@@ -377,19 +460,26 @@ public:
         }
     }
 
-    bool isError() { return error; }
+    bool isError() const { return error; }
+    double getNFlyby() const { return nFlyby; }
+
 };
 
 void Draw(
     std::string fileName, double logmin=-1., 
-    bool drawGrid=false, bool drawColorBar=true, 
-    EColorPalette colorMapName=EColorPalette::kBlueRedYellow
+    bool drawGrid=false, bool drawInjectionLine=false, bool drawColorBar=true, 
+    EColorPalette colorMapName=EColorPalette::kRainBow
 ) 
 {
     DrawMesh ps(fileName);
     ps.Log(logmin);
     if (!ps.isError()) 
     {
-        ps.drawMesh(drawGrid, drawColorBar, colorMapName);
+        ps.drawMesh(drawGrid, drawInjectionLine, drawColorBar, colorMapName);
+        std::cout << "# nFlyby: " << ps.getNFlyby() << "%\n";
+    }
+    else
+    {
+        std::cerr << "ошибка чтения!\n";
     }
 }
