@@ -430,7 +430,7 @@ bool InputReader::generateInjectionLine()
     }
     else if (fabs(cosTheta) < 1e-10)
     {
-        for (uint ir = 0; ir < nr; ir++) {
+        for (uint ir = nr-1; ir+1 > 0; ir--) {
             index.emplace_back(iz0, ir);
             sArray.push_back(rArray[ir+1] - rArray[ir]);
             ns++;

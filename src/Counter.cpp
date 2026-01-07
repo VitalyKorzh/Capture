@@ -84,7 +84,7 @@ void Counter::printStartInfo() const
     os << "# count\n";
     os << "# \tparticles=" << nParticles << "\n";
     os << "# \tsigma=" << sigma << "\n";
-    os << "# \ttheta=" << theta << "\n";
+    os << "# \ttheta=" << theta*180./M_PI << "\n";
     os << "# \tposition\n";
     os << "# \t\tz " << position.first << "\n# \t\tr " << position.second << "\n";
     os << "#\n";

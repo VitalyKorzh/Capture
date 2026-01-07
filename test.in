@@ -5,7 +5,7 @@ mesh
 
     z-axis
         array 20
-            min 0
+            min -2
             max 2
             
     r-axis
@@ -44,7 +44,7 @@ mesh end
 
 count
     sigma=1e-16
-    theta=0
+    theta=90
     particles=1000000
     position
         z 0.175

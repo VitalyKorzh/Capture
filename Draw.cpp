@@ -109,6 +109,10 @@ private:
     std::vector <bool> lineCell;
     double nFlyby;
 
+    double theta;
+    double z0;
+    double r0;
+
     uint nz;
     uint nr;
 
@@ -317,6 +321,26 @@ public:
                 return;
             }
 
+            if (!readUntil(fin, "# count"))
+            {
+                std::cerr << "не удалось найти count\n";
+                error = true;
+                fin.close();
+                return;
+            }
+            
+            std::getline(fin, line);
+            std::getline(fin, line);
+            std::getline(fin, line);
+
+            StringReader::getDoubleParameter(line, "# 	theta=", theta);
+            theta *= M_PI/180.;
+            std::getline(fin, line);
+            std::getline(fin, line);
+            StringReader::getDoubleParameter(line, "# 		z ", z0);
+            std::getline(fin, line);
+            StringReader::getDoubleParameter(line, "# 		r ", r0);
+
             if (!readUntil(fin, "# result:"))
             {
                 std::cerr << "не удалось найти result:\n";
@@ -430,7 +454,92 @@ public:
 
         if (drawInjectionLine)
         {
-            
+            /*uint iz0 = 0;
+            uint ir0 = 0;
+
+            uint iz1 = 0;
+            uint ir1 = 0;
+
+            bool first = false;
+
+            for (uint iz = 0; iz < nz; iz++)
+            {
+                for (uint ir = 0; ir < nr; ir++)
+                {
+                    if (lineCell[iz*nr+ir])
+                    {
+                        iz1 = iz;
+                        ir1 = ir;
+                    }
+
+                    if (!first && lineCell[iz*nr+ir])
+                    {
+                        first = true;
+                        iz0 = iz;
+                        ir0 = ir;
+                    }
+                }
+            }*/
+            double zmin = zArray.front();
+            double zmax = zArray.back();
+
+            double rmin = rArray.front();
+            double rmax = rArray.back();
+
+            const uint N = 2;
+            double Z[N];
+            double R[N];
+
+            if (sin(theta) < 1e-10)
+            {
+                Z[0] = zmin;
+                Z[1] = zmax;
+                R[0] = r0;
+                R[1] = r0;
+            }
+            else if(cos(theta) < 1e-10)
+            {
+                Z[0] = z0;
+                Z[1] = z0;
+                R[0] = rmin;
+                R[1] = rmax;
+            }
+            else {
+                const uint points=4;
+                double t[points];
+                t[0] = (zmin - z0) / cos(theta);
+                t[1] = (zmax - z0) / cos(theta);
+
+                t[2] = -(rmin - r0) / sin(theta);
+                t[3] = -(rmax - r0) / sin(theta);
+
+                uint count = 0;
+                for (uint i = 0; i < points; i++)
+                {
+                    double z = z0 + t[i]*cos(theta);
+                    double r = r0 - t[i]*sin(theta);
+
+                    if (z >= zmin && z <= zmax && r >= rmin && r <= rmax)
+                    {
+                        Z[count] = z;
+                        R[count] = r;
+                        count++;
+                    }
+
+
+                }
+
+
+            }
+
+            TGraph *g = new TGraph(N, Z, R); 
+            g->SetLineWidth(1);
+            g->SetEditable(false);
+            g->SetBit(kCanDelete);
+            g->SetEditable(kFALSE);
+            g->SetLineColor(2);
+            mg->Add(g, "L");
+
         }
 
         mg->SetTitle(";z, cm;r, cm");
