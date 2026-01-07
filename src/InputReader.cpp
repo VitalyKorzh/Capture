@@ -194,8 +194,8 @@ bool InputReader::readPosition(std::istream &in, std::pair<double, double> &p)
     for (uint i = 0; i < N_PAR; i++)
     {
         skip(in, line, true);
-        array[0] = StringReader::getDoubleParameter(line, "z ", p1) | array[0];
-        array[1] = StringReader::getDoubleParameter(line, "r ", p2) | array[1];
+        arrayBit(array[0], StringReader::getDoubleParameter(line, "z ", p1));
+        arrayBit(array[1], StringReader::getDoubleParameter(line, "r ", p2));
     }
 
     if (checkArray(array, N_PAR))
@@ -227,34 +227,79 @@ bool InputReader::readAxis(std::istream &in, darray &axis, uint &size, const std
 {
     std::string line;
     skip(in, line, true);
-    if (!StringReader::getUnsignedParameter(line, "n ", size)) 
+    if (StringReader::getUnsignedParameter(line, "n ", size)) 
     {
-        errorMessage("не указано число разбиений по " + name);
-        return false;
-    }
-    if (size == 0) 
-    {
-        errorMessage("число разбиений должно n[>=1]");
-        return false;
-    }
-    axis.clear();
-    axis.reserve(size+1);
-    for (uint i = 0; i < size+1; i++) 
-    {
-        double val;
-        in >> val;
-        if (i != 0 && val <= axis.back()) 
+        if (size == 0) 
         {
-            errorMessage("сетка по " + name + " задается по возрастанию");
+            errorMessage("число разбиений должно n[>=1]");
             return false;
         }
-        axis.push_back(val);
+        axis.clear();
+        axis.reserve(size+1);
+        for (uint i = 0; i < size+1; i++) 
+        {
+            double val;
+            in >> val;
+            if (i != 0 && val <= axis.back()) 
+            {
+                errorMessage("сетка по " + name + " задается по возрастанию");
+                return false;
+            }
+            axis.push_back(val);
+        }
     }
+    else if (StringReader::getUnsignedParameter(line, "array ", size))
+    {
+        if (size == 0) 
+        {
+            errorMessage("число разбиений должно n[>=1]");
+            return false;
+        }
+        axis.clear();
+        axis.reserve(size+1);
+
+        double min = 0;
+        double max = 0;
+
+        const uint N_PAR = 2;
+        bool array[] = {false, false};
+
+        for (uint i = 0; i < N_PAR; i++)
+        {
+            skip(in, line, true);
+            arrayBit(array[0], StringReader::getDoubleParameter(line, "min ", min));
+            arrayBit(array[1], StringReader::getDoubleParameter(line, "max ", max));
+        }
+
+        if (checkArray(array, N_PAR))
+        {
+            if (max <= min)
+            {
+                errorMessage("не правельные границы min < max");
+                return false;
+            }
+
+            for (uint i = 0; i < size+1; i++)
+                axis.push_back(min + (max-min)/size*i);
+
+        }
+        else {
+            errorConfigConstNumberPar("указаны не все праметры [", {"min", "max"}, array, N_PAR);
+            return  false;
+        }
+    }
+    else{
+        errorMessage("не известен способ разбиения интервала");
+        return false;
+    }
+
+
     if (in.fail())
     {
         errorMessage("не удалось прочитать разбиение по " + name);
         return false;
     }
+
     return true;
 }
 

@@ -107,6 +107,10 @@ private:
         return true;
     }
 
+    void arrayBit(bool &array, bool test) const {
+        array = test | array;
+    }
+
 public:
     
     InputReader(std::istream &in=std::cin);

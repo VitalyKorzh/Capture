@@ -25,6 +25,7 @@ Counter::Counter(std::istream &in, std::ostream &os) : reader(in), os(os), nz(re
 
 void Counter::count()
 {
+    TimeProfiler t_cout("time count full");
     if (!reader.work)
         return;
     clearPrevious();
