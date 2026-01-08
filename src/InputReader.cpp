@@ -442,9 +442,10 @@ bool InputReader::generateInjectionLine()
         const uint points = 4;
         double t[points];
 
-        index.emplace_back(iz0, ir0); 
-        sArray.push_back(0);
-        double &s0 = sArray.back();
+        std::vector <std::pair<std::pair<uint, uint>, double>> temp;
+        temp.emplace_back(std::pair<uint, uint>(iz0, ir0), 0);
+        //index.emplace_back(iz0, ir0); 
+        //sArray.push_back(0);
         ns++;
         const uint iz0_start = iz0;
         const uint ir0_start = ir0;
@@ -453,6 +454,7 @@ bool InputReader::generateInjectionLine()
         //трасировка назад
         while (iz0 > 0 && ir0 < nr)
         {
+
             double z1 = zArray[iz0];
             double z2 = zArray[iz0+1];
             double r1 = rArray[ir0];
@@ -472,7 +474,7 @@ bool InputReader::generateInjectionLine()
 
                 double z = z0 + t[it]*cosTheta;
                 double r = r0 - t[it]*sinTheta;
-                l = -(t[it]-tPrevious);
+                l = (tPrevious - t[it]);
 
                 if ( ((z >= z1 && z <= z2) || (it < 2))  && ((r >= r1 && r <= r2) || it > 1))
                 {
@@ -496,16 +498,18 @@ bool InputReader::generateInjectionLine()
                 }
 
             }
-            if (iz0 > 0 && ir0  < nr) {
-                index.emplace_back(iz0, ir0);
-                ns++;
-            }
             if (!first)
-                sArray.push_back(l);
+                temp.back().second = l;
+                //sArray.push_back(l);
             else
             {
-                s0 += l;
+                temp.front().second += l;
                 first = false;
+            }
+            if (iz0 > 0 && ir0  < nr) {
+                //index.emplace_back(iz0, ir0);
+                temp.emplace_back(std::pair<uint, uint>(iz0, ir0), 0);
+                ns++;
             }
 
         }
@@ -559,22 +563,46 @@ bool InputReader::generateInjectionLine()
                 }
 
             }
-            if (iz0 < nz && ir0 >0) {
-                index.emplace_back(iz0, ir0);
-                ns++;
-            }
             if (!first)
-                sArray.push_back(l);
+                temp.back().second = l;
+                //sArray.push_back(l);
             else
             {
-                s0 += l;
+                temp.front().second += l;
                 first = false;
+            }
+            if (iz0 < nz && ir0 >0) {
+                //index.emplace_back(iz0, ir0);
+                temp.emplace_back(std::pair<uint, uint>(iz0, ir0), 0);
+                ns++;
             }
 
         }
         
+        std::sort(temp.begin(), temp.end(), 
+            [] (const auto &a, const auto &b) {
+                const auto &ai = a.first;
+                const auto &bi = b.first;
+                if (ai.second < bi.second)
+                    return false;
+                else if (ai.second > bi.second)
+                    return true;
+                else
+                {
+                    return ai.first < bi.first;
+                }
+            }
+        );
+
+        sArray.reserve(ns);
+        index.reserve(ns);
+        for (uint is = 0; is < ns; is++) {
+            sArray.push_back(temp[is].second);
+            index.emplace_back(temp[is].first.first, temp[is].first.second);
+        }
 
     }
+
 
     if (sArray.empty() || index.empty())
     {
