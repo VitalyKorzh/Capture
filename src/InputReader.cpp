@@ -438,75 +438,141 @@ bool InputReader::generateInjectionLine()
     }
     else
     {
-        int stepR = (sinTheta > 0) ? 1 : -1;
-        int stepZ = (cosTheta > 0) ? 1 : -1;
+        double tPrevious = 0.;
+        const uint points = 4;
+        double t[points];
 
-        double tMaxR = (stepR > 0) ? (rArray[ir0+1]-r0)/sinTheta : (rArray[ir0]-r0)/sinTheta;
-        double tMaxZ = (stepZ > 0) ? (zArray[iz0+1]-z0)/cosTheta : (zArray[iz0]-z0)/cosTheta;
+        index.emplace_back(iz0, ir0); 
+        sArray.push_back(0);
+        double &s0 = sArray.back();
+        ns++;
+        const uint iz0_start = iz0;
+        const uint ir0_start = ir0;
+        bool first = true;
 
-        double tDeltaR = fabs((rArray[1] - rArray[0]) / sinTheta);
-        double tDeltaZ = fabs((zArray[1] - zArray[0]) / cosTheta);
-        
-        int ir = ir0;
-        int iz = iz0;
-        
-        // Проходим по всем ячейкам вдоль луча
-        while (ir >= 0 && ir < (int)nr && iz >= 0 && iz < (int)nz) {
-            // Добавляем текущую ячейку
-            index.emplace_back(ir, iz);
-            ns++;
-            
-            // Определяем, какую границу пересечем следующей
-            if (tMaxR < tMaxZ) {
-                // Пересекаем границу по R
-                // Длина пути в текущей ячейке = расстояние до границы по R
-                double segment_length = tMaxR - ((ns == 1) ? 0.0 : sArray.back());
-                sArray.push_back(segment_length);
-                
-                // Переходим к следующей ячейке
-                tMaxR += tDeltaR;
-                ir += stepR;
-                
-                // Обновляем tDeltaR для новой ячейки (если сетка неравномерная)
-                if (ir >= 0 && ir < (int)nr) {
-                    int cellR = (stepR > 0) ? ir : ir + 1;
-                    if (cellR >= 0 && cellR < (int)nr) {
-                        tDeltaR = fabs((rArray[cellR + 1] - rArray[cellR]) / sinTheta);
+        //трасировка назад
+        while (iz0 > 0 && ir0 < nr)
+        {
+            double z1 = zArray[iz0];
+            double z2 = zArray[iz0+1];
+            double r1 = rArray[ir0];
+            double r2 = rArray[ir0+1];
+
+            t[0] = (z1 - z0) / cosTheta;
+            t[1] = (z2 - z0) / cosTheta;
+            t[2] = -(r1 - r0) / sinTheta;
+            t[3] = -(r2 - r0) / sinTheta;
+
+            double l = 0;
+
+            for (uint it = 0; it < points; it++)
+            {
+                if (t[it] >= tPrevious)
+                    continue;
+
+                double z = z0 + t[it]*cosTheta;
+                double r = r0 - t[it]*sinTheta;
+                l = -(t[it]-tPrevious);
+
+                if ( ((z >= z1 && z <= z2) || (it < 2))  && ((r >= r1 && r <= r2) || it > 1))
+                {
+                    switch (it)
+                    {
+                    case 0:
+                        iz0--;
+                        break;
+                    case 1:
+                        iz0--;
+                        break;
+                    case 2:
+                        ir0++;
+                        break;
+                    case 3:
+                        ir0++;
+                        break;
                     }
+                    tPrevious = t[it];
+                    break;
                 }
-            } else {
-                // Пересекаем границу по Z
-                // Длина пути в текущей ячейке = расстояние до границы по Z
-                double segment_length = tMaxZ - ((ns == 1) ? 0.0 : sArray.back());
-                sArray.push_back(segment_length);
-                
-                // Переходим к следующей ячейке
-                tMaxZ += tDeltaZ;
-                iz += stepZ;
-                
-                // Обновляем tDeltaZ для новой ячейки
-                if (iz >= 0 && iz < (int)nz) {
-                    int cellZ = (stepZ > 0) ? iz : iz + 1;
-                    if (cellZ >= 0 && cellZ < (int)nz) {
-                        tDeltaZ = fabs((zArray[cellZ + 1] - zArray[cellZ]) / cosTheta);
-                    }
-                }
+
             }
-            
-            // Проверяем, не вышли ли за пределы сетки
-            if (ir < 0 || ir >= (int)nr || iz < 0 || iz >= (int)nz) {
-                break;
+            if (iz0 > 0 && ir0  < nr) {
+                index.emplace_back(iz0, ir0);
+                ns++;
             }
+            if (!first)
+                sArray.push_back(l);
+            else
+            {
+                s0 += l;
+                first = false;
+            }
+
         }
         
-        // Для последней ячейки длина может быть неполной
-        if (!sArray.empty() && sArray.size() < index.size()) {
-            // Оцениваем оставшуюся длину в последней ячейке
-            double last_length = std::min(tMaxR, tMaxZ) - sArray.back();
-            if (last_length > 0) {
-                sArray.push_back(last_length);
+        first = true;
+        tPrevious = 0;
+        iz0 = iz0_start;
+        ir0 = ir0_start;
+        // трасировка вперед
+        while (iz0 < nz && ir0 >0)
+        {   
+            double z1 = zArray[iz0];
+            double z2 = zArray[iz0+1];
+            double r1 = rArray[ir0];
+            double r2 = rArray[ir0+1];
+
+            t[0] = (z1 - z0) / cosTheta;
+            t[1] = (z2 - z0) / cosTheta;
+            t[2] = -(r1 - r0) / sinTheta;
+            t[3] = -(r2 - r0) / sinTheta;
+
+            double l = 0;
+            for (uint it = 0; it < points; it++)
+            {
+                if (t[it] <= tPrevious)
+                    continue;
+                
+                double z = z0 + t[it]*cosTheta;
+                double r = r0 - t[it]*sinTheta;
+                l = (t[it]-tPrevious);
+
+                if ( ((z >= z1 && z <= z2) || (it < 2))  && ((r >= r1 && r <= r2) || it > 1))
+                {
+                    switch (it)
+                    {
+                    case 0:
+                        iz0++;
+                        break;
+                    case 1:
+                        iz0++;
+                        break;
+                    case 2:
+                        ir0--;
+                        break;
+                    case 3:
+                        ir0--;
+                        break;
+                    }
+                    tPrevious = t[it];
+                    break;
+                }
+
             }
+            if (iz0 < nz && ir0 >0) {
+                index.emplace_back(iz0, ir0);
+                ns++;
+            }
+            if (!first)
+                sArray.push_back(l);
+            else
+            {
+                s0 += l;
+                first = false;
+            }
+
         }
+        
 
     }
 
