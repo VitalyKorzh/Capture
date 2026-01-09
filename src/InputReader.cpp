@@ -27,12 +27,12 @@ void InputReader::traceLine(int step, uint &iz0, uint &ir0, double sinTheta, dou
 
         for (uint it = 0; it < points; it++)
         {
-            if (t[it] >= tPrevious)
+            if ((t[it] >= tPrevious && step < 0) || ((t[it] <= tPrevious) && step > 0) )
                 continue;
 
             double z = z0 + t[it]*cosTheta;
             double r = r0 - t[it]*sinTheta;
-            l = (tPrevious - t[it]);
+            l = std::abs(tPrevious - t[it]);
 
             if ( ((z >= z1 && z <= z2) || (it < 2))  && ((r >= r1 && r <= r2) || it > 1))
             {
