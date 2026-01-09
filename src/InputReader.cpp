@@ -559,7 +559,6 @@ bool InputReader::generateInjectionLine()
                         break;
                     }
                     tPrevious = t[it];
-                    break;
                 }
 
             }

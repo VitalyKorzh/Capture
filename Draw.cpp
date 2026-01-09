@@ -96,6 +96,10 @@ TCanvas* makeCanvas(
 	c->SetBit(kCanDelete);
     if (grid)
 	    c->SetGrid();
+    gPad->SetLeftMargin(0.12);
+    //gPad->SetRightMargin(0.01);
+    //gPad->SetTopMargin(0.1);
+    //gPad->SetBottomMargin(0.1);
 	c->cd();
 	return c;
 }

@@ -4,19 +4,56 @@ normaN=1e16
 mesh
 
     z-axis
-        array 20
+        array 10
             min -2
             max 2
             
     r-axis
-        n 4
-            -2
-            -1
-            0
-            1
-            2
+        array 10
+            min -2
+            max 2
 
     ni
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
         1
         1
         1
@@ -45,8 +82,8 @@ mesh end
 count
     sigma=1e-16
     theta=45
-    particles=1000000
+    particles=10000000
     position
-        z 0.175
-        r 1.75
+        z 0.
+        r 0.
 count end
