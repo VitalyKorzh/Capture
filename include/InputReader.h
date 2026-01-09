@@ -112,6 +112,10 @@ private:
         array = test | array;
     }
 
+
+    void traceLine(int step, uint &iz0, uint &ir0, double sinTheta, double cosTheta, double z0, double r0, std::vector <std::pair<std::pair<uint, uint>, double>> &temp,
+                   bool (*condition) (uint iz0, uint ir0, uint nz, uint nr)    );
+
 public:
     
     InputReader(std::istream &in=std::cin);

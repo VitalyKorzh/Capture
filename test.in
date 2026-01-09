@@ -84,6 +84,6 @@ count
     theta=45
     particles=10000000
     position
-        z 0.
+        z 1.75
         r 0.
 count end

@@ -3,6 +3,75 @@
 
 #include <cmath>
 
+void InputReader::traceLine(int step, uint &iz0, uint &ir0, double sinTheta, double cosTheta, double z0, double r0, std::vector <std::pair<std::pair<uint, uint>, double>> &temp, 
+                            bool (*condition) (uint iz0, uint ir0, uint nz, uint nr))
+{
+    double tPrevious = 0.;
+    const uint points = 4;
+    double t[points];
+    bool first = true;
+    while (condition(iz0, ir0, nz, nr))
+    {
+
+        double z1 = zArray[iz0];
+        double z2 = zArray[iz0+1];
+        double r1 = rArray[ir0];
+        double r2 = rArray[ir0+1];
+
+        t[0] = (z1 - z0) / cosTheta;
+        t[1] = (z2 - z0) / cosTheta;
+        t[2] = -(r1 - r0) / sinTheta;
+        t[3] = -(r2 - r0) / sinTheta;
+
+        double l = 0;
+
+        for (uint it = 0; it < points; it++)
+        {
+            if (t[it] >= tPrevious)
+                continue;
+
+            double z = z0 + t[it]*cosTheta;
+            double r = r0 - t[it]*sinTheta;
+            l = (tPrevious - t[it]);
+
+            if ( ((z >= z1 && z <= z2) || (it < 2))  && ((r >= r1 && r <= r2) || it > 1))
+            {
+                switch (it)
+                {
+                case 0:
+                    iz0 += step;
+                    break;
+                case 1:
+                    iz0 += step;
+                    break;
+                case 2:
+                    ir0 -= step;
+                    break;
+                case 3:
+                    ir0 -= step;
+                    break;
+                }
+                tPrevious = t[it];
+                break;
+            }
+
+        }
+        if (!first)
+            temp.back().second = l;
+        else
+        {
+            temp.front().second += l;
+            first = false;
+        }
+        if (condition(iz0, ir0, nz, nr)) {
+            temp.emplace_back(std::pair<uint, uint>(iz0, ir0), 0);
+            ns++;
+        }
+
+    }
+        
+}
+
 InputReader::InputReader(std::istream &in)
 {
     std::string line = "";
@@ -68,7 +137,6 @@ void InputReader::errorMessage(std::string error)
 {
     error_message = "# " + std::to_string(numberLine) + ": " + error + "\n";
 }
-
 
 void InputReader::errorConfigConstNumberPar(std::string part1, const std::vector<std::string> PAR_NAMES, const bool *array, const uint N_STEP)
 {
@@ -361,7 +429,6 @@ bool InputReader::readCount(std::istream &in)
     return true;
 }
 
-
 bool InputReader::generateInjectionLine()
 {
     ns = 0;
@@ -376,7 +443,7 @@ bool InputReader::generateInjectionLine()
     double r0 = position.second;
 
     // z = z0 + t*cos(theta)
-    // r = r0 + t*sin(theta)
+    // r = r0 - t*sin(theta)
     uint iz0 = 0;
     uint ir0 = 0;
 
@@ -438,21 +505,24 @@ bool InputReader::generateInjectionLine()
     }
     else
     {
-        double tPrevious = 0.;
-        const uint points = 4;
-        double t[points];
+        //double tPrevious = 0.;
+        //const uint points = 4;
+        //double t[points];
 
         std::vector <std::pair<std::pair<uint, uint>, double>> temp;
         temp.emplace_back(std::pair<uint, uint>(iz0, ir0), 0);
-        //index.emplace_back(iz0, ir0); 
-        //sArray.push_back(0);
         ns++;
         const uint iz0_start = iz0;
         const uint ir0_start = ir0;
-        bool first = true;
+        //bool first = true;
 
         //трасировка назад
-        while (iz0 > 0 && ir0 < nr)
+        traceLine(-1, iz0, ir0, sinTheta, cosTheta, z0, r0, temp, [](uint iz0, uint ir0, uint nz, uint nr) 
+            { 
+                return iz0 > 0 && ir0 < nr; 
+            } 
+        );
+        /*while (iz0 > 0 && ir0 < nr)
         {
 
             double z1 = zArray[iz0];
@@ -500,26 +570,29 @@ bool InputReader::generateInjectionLine()
             }
             if (!first)
                 temp.back().second = l;
-                //sArray.push_back(l);
             else
             {
                 temp.front().second += l;
                 first = false;
             }
             if (iz0 > 0 && ir0  < nr) {
-                //index.emplace_back(iz0, ir0);
                 temp.emplace_back(std::pair<uint, uint>(iz0, ir0), 0);
                 ns++;
             }
 
-        }
+        }*/
         
-        first = true;
-        tPrevious = 0;
+        //first = true;
+        //tPrevious = 0;
         iz0 = iz0_start;
         ir0 = ir0_start;
         // трасировка вперед
-        while (iz0 < nz && ir0 >0)
+        traceLine(1, iz0, ir0, sinTheta, cosTheta, z0, r0, temp, [](uint iz0, uint ir0, uint nz, uint nr) 
+            {
+                return iz0 < nz && ir0 > 0;
+            } 
+        );
+        /*while (iz0 < nz && ir0 >0)
         {   
             double z1 = zArray[iz0];
             double z2 = zArray[iz0+1];
@@ -564,19 +637,17 @@ bool InputReader::generateInjectionLine()
             }
             if (!first)
                 temp.back().second = l;
-                //sArray.push_back(l);
             else
             {
                 temp.front().second += l;
                 first = false;
             }
             if (iz0 < nz && ir0 >0) {
-                //index.emplace_back(iz0, ir0);
                 temp.emplace_back(std::pair<uint, uint>(iz0, ir0), 0);
                 ns++;
             }
 
-        }
+        }*/
         
         std::sort(temp.begin(), temp.end(), 
             [] (const auto &a, const auto &b) {
