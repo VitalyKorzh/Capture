@@ -473,18 +473,33 @@ bool InputReader::generateInjectionLine()
         double r1 = rArray[ir];
         double r2 = rArray[ir+1];
 
-        if (r0 >= r1 && r0 < r2)
+        if (r0 > r1 && r0 < r2)
         {
             ir0 = ir;
             found = true;
             break;
         }
-        /*else if (r0 == r1)
+        else if (r0 == r1)
         {
-            
-        }*/
+            double t = (zArray[iz0] - z0) / cosTheta;
+
+            z0 = z0 + t/2.*cosTheta;
+            r0  = r0 + t/2.*sinTheta;
+            ir0 = ir;
+            found = true;
+            break;
+        }
 
     }
+
+
+    if (z0 == zArray[iz0])
+    {
+        double t = (rArray[ir0] - r0) / sinTheta;
+        z0 = z0 + t/2.*cosTheta;
+        r0  = r0 + t/2.*sinTheta;
+    }
+
 
     if (!found) {
         errorMessage("начальная точка не найдена по r");
