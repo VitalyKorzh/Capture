@@ -20,8 +20,8 @@ void InputReader::traceLine(int step, uint &iz0, uint &ir0, double sinTheta, dou
 
         t[0] = (z1 - z0) / cosTheta;
         t[1] = (z2 - z0) / cosTheta;
-        t[2] = -(r1 - r0) / sinTheta;
-        t[3] = -(r2 - r0) / sinTheta;
+        t[2] = (r1 - r0) / sinTheta;
+        t[3] = (r2 - r0) / sinTheta;
 
         double l = 0;
 
@@ -31,7 +31,7 @@ void InputReader::traceLine(int step, uint &iz0, uint &ir0, double sinTheta, dou
                 continue;
 
             double z = z0 + t[it]*cosTheta;
-            double r = r0 - t[it]*sinTheta;
+            double r = r0 + t[it]*sinTheta;
             l = std::abs(tPrevious - t[it]);
 
             if ( ((z >= z1 && z <= z2) || (it < 2))  && ((r >= r1 && r <= r2) || it > 1))
@@ -438,12 +438,12 @@ bool InputReader::generateInjectionLine()
     lineCell.resize(nz*nr, false);
 
     double cosTheta = cos(theta);
-    double sinTheta = sin(theta);
+    double sinTheta = -sin(theta);
     double z0 = position.first;
     double r0 = position.second;
 
     // z = z0 + t*cos(theta)
-    // r = r0 - t*sin(theta)
+    // r = r0 + t*sin(theta)
     uint iz0 = 0;
     uint ir0 = 0;
 
@@ -479,6 +479,10 @@ bool InputReader::generateInjectionLine()
             found = true;
             break;
         }
+        /*else if (r0 == r1)
+        {
+            
+        }*/
 
     }
 
@@ -505,16 +509,11 @@ bool InputReader::generateInjectionLine()
     }
     else
     {
-        //double tPrevious = 0.;
-        //const uint points = 4;
-        //double t[points];
-
         std::vector <std::pair<std::pair<uint, uint>, double>> temp;
         temp.emplace_back(std::pair<uint, uint>(iz0, ir0), 0);
         ns++;
         const uint iz0_start = iz0;
         const uint ir0_start = ir0;
-        //bool first = true;
 
         //трасировка назад
         traceLine(-1, iz0, ir0, sinTheta, cosTheta, z0, r0, temp, [](uint iz0, uint ir0, uint nz, uint nr) 
@@ -522,68 +521,7 @@ bool InputReader::generateInjectionLine()
                 return iz0 > 0 && ir0 < nr; 
             } 
         );
-        /*while (iz0 > 0 && ir0 < nr)
-        {
-
-            double z1 = zArray[iz0];
-            double z2 = zArray[iz0+1];
-            double r1 = rArray[ir0];
-            double r2 = rArray[ir0+1];
-
-            t[0] = (z1 - z0) / cosTheta;
-            t[1] = (z2 - z0) / cosTheta;
-            t[2] = -(r1 - r0) / sinTheta;
-            t[3] = -(r2 - r0) / sinTheta;
-
-            double l = 0;
-
-            for (uint it = 0; it < points; it++)
-            {
-                if (t[it] >= tPrevious)
-                    continue;
-
-                double z = z0 + t[it]*cosTheta;
-                double r = r0 - t[it]*sinTheta;
-                l = (tPrevious - t[it]);
-
-                if ( ((z >= z1 && z <= z2) || (it < 2))  && ((r >= r1 && r <= r2) || it > 1))
-                {
-                    switch (it)
-                    {
-                    case 0:
-                        iz0--;
-                        break;
-                    case 1:
-                        iz0--;
-                        break;
-                    case 2:
-                        ir0++;
-                        break;
-                    case 3:
-                        ir0++;
-                        break;
-                    }
-                    tPrevious = t[it];
-                    break;
-                }
-
-            }
-            if (!first)
-                temp.back().second = l;
-            else
-            {
-                temp.front().second += l;
-                first = false;
-            }
-            if (iz0 > 0 && ir0  < nr) {
-                temp.emplace_back(std::pair<uint, uint>(iz0, ir0), 0);
-                ns++;
-            }
-
-        }*/
         
-        //first = true;
-        //tPrevious = 0;
         iz0 = iz0_start;
         ir0 = ir0_start;
         // трасировка вперед
@@ -592,62 +530,6 @@ bool InputReader::generateInjectionLine()
                 return iz0 < nz && ir0 > 0;
             } 
         );
-        /*while (iz0 < nz && ir0 >0)
-        {   
-            double z1 = zArray[iz0];
-            double z2 = zArray[iz0+1];
-            double r1 = rArray[ir0];
-            double r2 = rArray[ir0+1];
-
-            t[0] = (z1 - z0) / cosTheta;
-            t[1] = (z2 - z0) / cosTheta;
-            t[2] = -(r1 - r0) / sinTheta;
-            t[3] = -(r2 - r0) / sinTheta;
-
-            double l = 0;
-            for (uint it = 0; it < points; it++)
-            {
-                if (t[it] <= tPrevious)
-                    continue;
-                
-                double z = z0 + t[it]*cosTheta;
-                double r = r0 - t[it]*sinTheta;
-                l = (t[it]-tPrevious);
-
-                if ( ((z >= z1 && z <= z2) || (it < 2))  && ((r >= r1 && r <= r2) || it > 1))
-                {
-                    switch (it)
-                    {
-                    case 0:
-                        iz0++;
-                        break;
-                    case 1:
-                        iz0++;
-                        break;
-                    case 2:
-                        ir0--;
-                        break;
-                    case 3:
-                        ir0--;
-                        break;
-                    }
-                    tPrevious = t[it];
-                }
-
-            }
-            if (!first)
-                temp.back().second = l;
-            else
-            {
-                temp.front().second += l;
-                first = false;
-            }
-            if (iz0 < nz && ir0 >0) {
-                temp.emplace_back(std::pair<uint, uint>(iz0, ir0), 0);
-                ns++;
-            }
-
-        }*/
         
         std::sort(temp.begin(), temp.end(), 
             [] (const auto &a, const auto &b) {
