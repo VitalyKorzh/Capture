@@ -3,7 +3,7 @@
 
 #include <cmath>
 
-void InputReader::traceLine(int step, uint &iz0, uint &ir0, double sinTheta, double cosTheta, double z0, double r0, std::vector <std::pair<std::pair<uint, uint>, double>> &temp, 
+bool InputReader::traceLine(int step, uint &iz0, uint &ir0, double sinTheta, double cosTheta, double z0, double r0, std::vector <std::pair<std::pair<uint, uint>, double>> &temp, 
                             bool (*condition) (uint iz0, uint ir0, uint nz, uint nr))
 {
     double tPrevious = 0.;
@@ -24,6 +24,8 @@ void InputReader::traceLine(int step, uint &iz0, uint &ir0, double sinTheta, dou
         t[3] = (r2 - r0) / sinTheta;
 
         double l = 0;
+
+        bool find = false;
 
         for (uint it = 0; it < points; it++)
         {
@@ -52,10 +54,18 @@ void InputReader::traceLine(int step, uint &iz0, uint &ir0, double sinTheta, dou
                     break;
                 }
                 tPrevious = t[it];
+                find = true;
                 break;
             }
 
         }
+
+        if (!find)
+        {
+            errorMessage("не удалось построить линию");
+            return false;
+        }
+
         if (!first)
             temp.back().second = l;
         else
@@ -68,7 +78,10 @@ void InputReader::traceLine(int step, uint &iz0, uint &ir0, double sinTheta, dou
             ns++;
         }
 
+
     }
+
+    return true;
         
 }
 
@@ -531,20 +544,22 @@ bool InputReader::generateInjectionLine()
         const uint ir0_start = ir0;
 
         //трасировка назад
-        traceLine(-1, iz0, ir0, sinTheta, cosTheta, z0, r0, temp, [](uint iz0, uint ir0, uint nz, uint nr) 
+        if (!traceLine(-1, iz0, ir0, sinTheta, cosTheta, z0, r0, temp, [](uint iz0, uint ir0, uint nz, uint nr) 
             { 
                 return iz0 > 0 && ir0 < nr; 
             } 
-        );
+        ))
+            return false;
         
         iz0 = iz0_start;
         ir0 = ir0_start;
         // трасировка вперед
-        traceLine(1, iz0, ir0, sinTheta, cosTheta, z0, r0, temp, [](uint iz0, uint ir0, uint nz, uint nr) 
+        if (!traceLine(1, iz0, ir0, sinTheta, cosTheta, z0, r0, temp, [](uint iz0, uint ir0, uint nz, uint nr) 
             {
                 return iz0 < nz && ir0 > 0;
             } 
-        );
+        ))
+            return false;
         
         std::sort(temp.begin(), temp.end(), 
             [] (const auto &a, const auto &b) {
