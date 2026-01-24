@@ -6,9 +6,11 @@
 
 int main(int argc, char** argv)
 {
+    std::string inputFile = "../test.in";
+    std::string outputFile = "../test.out";
 
-    std::ifstream fin("../test.in");
-    std::ofstream fout("../test.out");
+    std::ifstream fin(inputFile);
+    std::ofstream fout(outputFile);
 
     if (fin.is_open() && fout.is_open())
     {
