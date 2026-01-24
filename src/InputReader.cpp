@@ -562,9 +562,9 @@ bool InputReader::generateInjectionLine()
             return false;
         
         std::sort(temp.begin(), temp.end(), 
-            [] (const auto &a, const auto &b) {
-                const auto &ai = a.first;
-                const auto &bi = b.first;
+            [] (const std::pair<std::pair<uint, uint>, double> &a, const std::pair<std::pair<uint, uint>, double> &b) {
+                const std::pair<uint, uint> &ai = a.first;
+                const std::pair<uint, uint> &bi = b.first;
                 if (ai.second < bi.second)
                     return false;
                 else if (ai.second > bi.second)
