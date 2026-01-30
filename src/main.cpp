@@ -13,8 +13,9 @@ int main(int argc, char** argv)
 
     bool work = commands(inputFile, outputFile, argc, argv);
 
-    if (!work)
+    if (!work) {
         return 1;
+    }
 
     std::ifstream fin(inputFile);
     std::ofstream fout(outputFile);
@@ -31,6 +32,10 @@ int main(int argc, char** argv)
         counter.printStartInfo();
         counter.count();
         counter.printResult();
+    }
+    else
+    {
+        std::cerr << "не удалось открыть файлы!\n";
     }
     fin.close();
     fout.close();
