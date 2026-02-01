@@ -151,7 +151,7 @@ void Counter::printStartInfo() const
         os << "# \t\tposition\n";
         os << "# \t\t\trho=" << injector.rho << "\n";
         os << "# \t\t\tz=" << injector.z << "\n";
-        os << "# \t\t\tphi=" << injector.phi << "\n";
+        os << "# \t\t\tphi=" << injector.phi*180./M_PI << "\n";
         os << "# \tinjector end\n";
     }
 

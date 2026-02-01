@@ -84,7 +84,7 @@ inline double Line::getTR(double r, double tPrevious) const
         t2 = 1./sinTheta * (d + sq);
     }
 
-    return t_crit >= tPrevious ? t1 : t2;
+    return t_crit > tPrevious ? t1 : t2;
 }
 
 inline double Line::getTZ(double z) const
@@ -183,7 +183,11 @@ LineData Line::traceLine(uint nz, uint nr, uint nphi, const darray &zArray, cons
     if (iR == nr+1) // луч прошел через ось
     {
         iR = 0;
-        iPhi = nphi-1 - iPhiprev;
+        double phi_new = phi_current+M_PI >= 2. * M_PI ? phi_current - M_PI : phi_current + M_PI;
+        for (uint iphi = 0; iphi < nphi; iphi++)
+           if (phi_new >= phiArray[iphi] && phi_new < phiArray[iphi+1])
+               iPhi = iphi;
+        //iPhi = (nphi/2 + iPhiprev) % nphi;
     }
 
     return data;
