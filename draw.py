@@ -12,7 +12,10 @@ class Injector:
         self.r0 = r0
 
 
-def drawGrid(ax, zArray : list, rArray : list, phiArray : list, nz : int, nr : int, nphi : int, color="black", linewidth=0.5, N=1000):
+def drawGrid(ax, zArray : list, rArray : list, phiArray : list, nz : int, nr : int, nphi : int, intersection=[], color_default="black", color_inter='blue', linewidth_default=0.5, linewidth_inter=2, N=1000):
+
+    while len(intersection) < nr*nz*nphi:
+        intersection.append(False)
 
     for iphi in range(nphi):
         for iz in range(nz):
@@ -25,6 +28,13 @@ def drawGrid(ax, zArray : list, rArray : list, phiArray : list, nz : int, nr : i
                 phi2 = phiArray[iphi+1]
 
                 phi = np.linspace(phi1, phi2, N)
+
+                linewidth = linewidth_default
+                color = color_default
+
+                if intersection[ir+nr*iz+iphi*nr*nz]:
+                    linewidth = linewidth_inter
+                    color = color_inter
 
                 ax.plot3D(np.ones(N)*zArray[iz], r1*np.cos(phi), r1*np.sin(phi), color=color, linewidth=linewidth)
                 ax.plot3D(np.ones(N)*zArray[iz], r2*np.cos(phi), r2*np.sin(phi), color=color, linewidth=linewidth)
@@ -48,6 +58,7 @@ def drawGrid(ax, zArray : list, rArray : list, phiArray : list, nz : int, nr : i
 def drawLine(ax, rho : float, phi : float, theta : float, z0 : float, Rmax : float, color="red", linewidth=2, linestyle="-", drawPoints=True, drawQuiver=True):
 
     t = np.sqrt(Rmax*Rmax - rho*rho) / np.sin(theta)
+    print('injection l = ', 2.*t)
 
     x0 = rho*np.cos(phi)
     y0 = rho*np.sin(phi)
@@ -92,14 +103,19 @@ def drawCircle(ax, rho : float, phi : float, z0 : float, r0 : float, color="red"
 
 
 
-def draw(zArray : list, rArray : list, phiArray : list, injectorArray : list,
+def draw(zArray : list, rArray : list, phiArray : list, injectorArray : list, intersection : list,
          drawGrid0=True, drawLine0=True, drawInjectionCircle0=True, drawCirle0=True, drawAxis0=True):
+
+
+    if len(zArray) == 0 or len(rArray) == 0 or len(phiArray) == 0:
+        print("не правильная сетка")
+        return
 
     fig = plt.figure(figsize=(200, 200))
     ax = fig.add_subplot(111, projection='3d')
 
     if (drawGrid0):
-        drawGrid(ax, zArray, rArray, phiArray, len(zArray)-1, len(rArray)-1, len(phiArray)-1) # рисуем сетку
+        drawGrid(ax, zArray, rArray, phiArray, len(zArray)-1, len(rArray)-1, len(phiArray)-1, intersection) # рисуем сетку
 
     listRho = []
     for injector in injectorArray:
@@ -128,22 +144,97 @@ def draw(zArray : list, rArray : list, phiArray : list, injectorArray : list,
     ax.set_ylim(-2*rArray[-1], 2*rArray[-1])
     ax.set_zlim(-2*rArray[-1], 2*rArray[-1])
 
-
     plt.show()
 
 
+def readAxis(file, data, type):
+    line = ''
 
-zArray = [-4, -2, 2, 4]
-rArray = [0, 0.5, 1, 2]
-phiArray = [0, np.pi/2., np.pi, 3/2*np.pi, 2*np.pi]
+    while not type + '-axis' in line:
+        line = file.readline()
 
-rho = 1.
-z0 = 0
-phi = 0
-theta = np.pi / 4
-r0 = 0
+    line = file.readline()
 
-inArray = [Injector(rho, phi, z0, theta, r0)]
+    n = int([i for i in line.split()][-1])
+    
+    for i in range(n+1):
+        line = file.readline()
+        value = float([i for i in line.split()][-1])
+        data[type + 'Axis'].append(value)
+
+def readFileOut(filename):
+
+    data = {
+        'zAxis' : [],
+        'rAxis' : [],
+        'phiAxis' : [],
+        'injectors' : [],
+        'intersection' : []
+    }
+
+    with open(filename, 'r') as file:
+        
+        line = ''
+
+        readAxis(file, data, 'z')
+        readAxis(file, data, 'r')
+        readAxis(file, data, 'phi') 
+
+        while not 'count end' in line:
+            
+            if 'injector' in line and not 'injector end' in line:
+
+                line = file.readline()
+                line = file.readline()
+                theta = float([i for i in line.split('=')][-1]) * np.pi / 180.
+                line = file.readline()
+                line = file.readline()
+                r0 = float([i for i in line.split('=')][-1])
+                line = file.readline()
+                line = file.readline()
+                rho = float([i for i in line.split('=')][-1])
+                line = file.readline()
+                z0 = float([i for i in line.split('=')][-1])
+                line = file.readline()
+                phi = float([i for i in line.split('=')][-1]) * np.pi / 180.
+
+                data['injectors'].append(Injector(rho, phi, z0, theta, r0))
 
 
-draw(zArray, rArray, phiArray, inArray)
+            line = file.readline()
+
+
+        nz = len(data['zAxis'])-1
+        nr = len(data['rAxis'])-1
+        nphi = len(data['phiAxis'])-1
+
+        while not 'nCapture=' in line:
+            line = file.readline()
+
+
+        for iphi in range(nphi):
+            line = file.readline()
+            for iz in range(nz):
+                
+                line = file.readline()
+                values = [float(i) for i in line.split()]
+
+                for ir in  range(nr):
+                    data['intersection'].append(bool(values[2*ir+1]))
+                
+
+
+    return data
+
+
+data = readFileOut("test.out")
+
+
+ns = 0
+for i in data['intersection']:
+    if i:
+        ns+=1
+
+print('ns =', ns)
+
+draw(data['zAxis'], data['rAxis'], data['phiAxis'], data['injectors'], data['intersection'], drawGrid0=True)
