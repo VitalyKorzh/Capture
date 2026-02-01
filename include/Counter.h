@@ -36,7 +36,10 @@ private:
 
     uint getIndex(uint iz, uint ir, uint iphi) const { return ir + nr*iz + nr*nz*iphi; }
 
-    void process(const Line &line, const Injector &injector, double gamma);
+    void process(const Line &line, const Injector &injector, double gamma, darray *sArray=nullptr);
+
+    darray fillSArray(const Line &line); 
+    void printSArray(const darray &sArray, uint i);
 
 public:
     Counter(std::istream &in=std::cin, std::ostream &os=std::cout);

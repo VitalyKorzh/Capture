@@ -27,13 +27,14 @@ Counter::Counter(std::istream &in, std::ostream &os) : reader(in), os(os), nz(re
     os << std::scientific;
 }
 
-void Counter::process(const Line &line, const Injector &injector, double gamma)
+void Counter::process(const Line &line, const Injector &injector, double gamma, darray *sArray)
 {
     double P1 = 0.;
     double P2 = 0.;
     bool found = false;
     double integral = 0.;
-    for (uint is = 0; is < line.getNs(); is++)
+    uint ns = line.getNs();
+    for (uint is = 0; is < ns; is++)
     {
         const LineData &data = line.getData()[is];
         uint ir = data.iR;
@@ -46,6 +47,10 @@ void Counter::process(const Line &line, const Injector &injector, double gamma)
         if (P1 < gamma && P2 > gamma)
         {
             nCap[getIndex(iz, ir, iphi)]++;
+
+            if (sArray != nullptr)
+                (*sArray)[1+2*ns+is]++;
+
             found = true;
             break;
         }
@@ -56,6 +61,40 @@ void Counter::process(const Line &line, const Injector &injector, double gamma)
     if (!found)
         nFlyby++;
 
+}
+
+darray Counter::fillSArray(const Line &line)
+{
+    uint ns = line.getNs();
+
+    darray sArray(ns*3+1, 0.);
+
+    for (uint i = 0; i < ns; i++)
+    {
+        sArray[1+i] = sArray[i] + line.getData()[i].s;
+        sArray[1+ns+i] = ni[getIndex(line.getData()[i].iZ, line.getData()[i].iR, 0)];
+    }
+
+    return sArray;
+}
+
+void Counter::printSArray(const darray &sArray, uint i)
+{
+    uint ns = (sArray.size()-1) / 3;
+    os << "# result injector " << i << "\n";
+
+    double full = 0;
+    for (uint i = 0; i < ns; i++)
+        full += sArray[i+1+2*ns];
+
+    for (uint i = 0; i < ns; i++)
+    {
+        os << sArray[i] << 
+        " " << sArray[i+1]
+        << " " << sArray[i+1+ns] <<
+        " " << sArray[i+1+2*ns] / full << "\n";
+    }
+    os << "#\n";
 }
 
 void Counter::count()
@@ -69,22 +108,30 @@ void Counter::count()
     std::mt19937 gen(rd());
     std::uniform_real_distribution <> distGamma(0., 1.);
 
+    uint index = 0;
     for (Injector injector : injectors)
     {
         double rho = injector.rho;
         double phi = injector.phi;
         double r0 = injector.r0;
 
+        darray sArray;
+
         if (r0 == 0) {
             Line line(rho, injector.theta, phi,  injector.z, nz, nr, nphi, zArray, rArray,  phiArray, reader.t_epsilon);
+
+            sArray = fillSArray(line);
+
             for (uint it = 0; it < injector.particles; it++)
                 if (line.getLineWork())
-                    process(line, injector, distGamma(gen));
+                    process(line, injector, distGamma(gen), &sArray);
                 else
                 {
                     std::cerr << "не удалось построить линию!\n";
                     break;
                 }
+
+            printSArray(sArray, index);
         }
         else
         {
@@ -112,6 +159,7 @@ void Counter::count()
         }
 
         nParticles += injector.particles;
+        index++;
     }
 }
 
