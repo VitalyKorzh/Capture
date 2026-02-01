@@ -1,0 +1,198 @@
+#include "Line.h"
+#include <cmath>
+#include <algorithm>
+
+inline double Line::getRPoint(double t) const
+{ 
+    double delta = (d - t * sinTheta);
+    return sqrt(rho2 + delta*delta); 
+}
+
+inline double Line::getPhiPoint(double t) const
+{
+    double y = getYPoint(t);
+    double x = getXPoint(t);
+
+    if (x > 0 && y >= 0)
+        return atan(y/x);
+    else if (x > 0 && y < 0)
+        return 2.*M_PI + atan(y/x);
+    else if (x < 0)
+        return M_PI + atan(y/x);
+    else if (x == 0 && y > 0)
+        return M_PI_2;
+    else if (x == 0 && y < 0)
+        return 3. * M_PI_2;
+    else
+        return 0.0;
+}
+
+Line::Line(
+    double rho, double theta, double phi0_rho, double z0_rho,
+    uint nz, uint nr, uint nphi,
+    const darray &zArray, const darray &rArray, const darray &phiArray) : rho(rho), rho2(rho * rho),
+                                                                          theta(theta), phi0_rho(phi0_rho), z0_rho(z0_rho),
+                                                                          sinTheta(sin(theta)), cosTheta(cos(theta)), sinPhi0(sin(phi0_rho)),
+                                                                          cosPhi0(cos(phi0_rho)), sx(-sinTheta * sinPhi0),
+                                                                          sy(sinTheta * cosPhi0), sz(cosTheta), intersectionPoints(nz * nr * nphi, false),
+                                                                          nz(nz), nr(nr), nphi(nphi), lineWork(false)
+
+{
+    if (nz == 0 || nz == 0 || nphi == 0)
+        return;
+
+    if (theta <= 0.)
+        return;
+
+    Rmax = rArray.back();
+    zmin = zArray.front();
+    zmax = zArray.back();
+
+    if (Rmax <= rho)
+        return;
+
+    d = sqrt(Rmax*Rmax - rho*rho);
+
+    x00 = rho*cosPhi0 + d * sinPhi0;
+    y00 = rho*sinPhi0 - d * cosPhi0;
+    z00 = z0_rho - d * cosTheta / sinTheta;
+
+    if (z00 < zmin || z00 >= zmax)
+        return;
+
+    if (z0_rho + d * cosTheta / sinTheta > zmax)
+        return;
+
+    lineWork = createDataArray(nz, nr, nphi, zArray, rArray, phiArray);
+
+    if (lineWork)
+        for (LineData id : data) // заполнить точки пересечения
+            intersectionPoints[id.iR + nr*id.iZ + nz*nr*id.iPhi] = true;
+
+}
+
+inline double Line::getTR(double r) const
+{
+    double t = -1.;
+
+    if (r > rho)
+        t = 1./sinTheta * (d - sqrt(r*r-rho2));
+
+    return t;
+}
+
+inline double Line::getTZ(double z) const
+{
+    if (cosTheta > 1e-12)
+        return (z - z00) / cosTheta;
+    else
+        return 1e12; // очень большой луч не пересикает
+}
+
+inline double Line::getTPhi(double phi) const
+{
+    double tanPhi = tan(phi);
+    if (phi != M_PI_2 && phi != 3. * M_PI_2)
+        return (tanPhi*x00-y00) / (sy - sx*tanPhi);
+    else
+        return - x00 / sx;
+}
+
+void Line::getNewIndex(const Boundary &boundary, uint &iZ, uint &iR, uint &iPhi)
+{
+    if (boundary.type == Boundary::IntersectionType::Z)
+        iZ = boundary.index;
+    else if (boundary.type == Boundary::IntersectionType::R)
+        iR = boundary.index;
+    else
+        iPhi = boundary.index;
+
+}
+
+LineData Line::traceLine(uint nz, uint nr, uint nphi, const darray &zArray, const darray &rArray, const darray &phiArray, double &tPrevious, uint &iZ, uint &iR, uint &iPhi)
+{
+    double s = 0;
+
+    double r1 = rArray[iR];
+    double r2 = rArray[iR+1];
+    double z1 = zArray[iZ];
+    double z2 = zArray[iZ+1];
+    double phi1 = phiArray[iPhi];
+    double phi2 = phiArray[iPhi+1];
+
+    const uint iZprev = iZ;
+    const uint iRprev = iR;
+    const uint iPhiprev = iPhi;
+
+    std::vector<Boundary> boundaries= 
+    {
+        Boundary(getTZ(z1), Boundary::IntersectionType::Z, iZ > 0 ? iZ-1 : nz),
+        Boundary(getTZ(z2), Boundary::IntersectionType::Z, iZ+1),
+        Boundary(getTR(r1), Boundary::IntersectionType::R, iR > 0 ? iR-1: nr),
+        Boundary(getTR(r2), Boundary::IntersectionType::R, iR+1),
+        Boundary(getTPhi(phi1), Boundary::IntersectionType::Phi, iPhi > 0 ? (iPhi-1) % nphi : nphi-1),
+        Boundary(getTPhi(phi2), Boundary::IntersectionType::Phi, (iPhi+1) % nphi )
+    };
+
+    std::sort(boundaries.begin(), boundaries.end(), [](Boundary a, Boundary b) 
+        {
+            return a.t_boundary < b.t_boundary;
+        }
+    );
+
+    bool findBoundary = false;
+    for (Boundary boundary : boundaries)
+    {
+        double t = boundary.t_boundary;
+        if (t > tPrevious && !findBoundary)
+        {
+            s = (t - tPrevious);
+            tPrevious = t;
+            findBoundary = true;
+            getNewIndex(boundary, iZ, iR, iPhi);
+        }
+        else if (t == tPrevious && findBoundary)
+            getNewIndex(boundary, iZ, iR, iPhi);
+    }
+
+    LineData data(iZprev, iRprev, iPhiprev, s);
+    return data;
+}
+
+bool Line::createDataArray(uint nz, uint nr, uint nphi, 
+                            const darray &zArray, const darray &rArray, 
+                            const darray &phiArray)
+{
+    double tPrevious = 0.;
+    uint iR = nr-1;
+    uint iZ = 0;
+    uint iPhi = 0;
+
+    {
+        for (uint iz = 0; iz < nz; iz++)
+        {
+            if (z00 >= zArray[iz] && z00 < zArray[iz+1])
+                iZ = iz;
+        }
+            
+            
+        double phi00 = getPhiPoint(0.);
+        for (uint iphi = 0; iphi < nphi; iphi++)
+        {
+            if (phi00 >= phiArray[iphi] && phi00 < phiArray[iphi+1])
+                iPhi = iphi;
+        }
+    }
+
+    ns = 0;
+
+    while (iZ != nz && iR != nr) {
+        data.push_back(traceLine(nz, nr, nphi, zArray, rArray, phiArray, tPrevious, iZ, iR, iPhi));
+        ns++;
+        if (ns > nr*nz*nphi)
+            return false;
+    }
+
+
+    return true;
+}

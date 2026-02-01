@@ -15,8 +15,10 @@
 #include <unordered_map>
 
 #include "StringReader.h"
+#include "Injector.h"
 
 typedef std::vector<double> darray;
+typedef std::vector <bool> barray;
 typedef std::vector<unsigned> uiarray;
 typedef unsigned uint;
 
@@ -32,19 +34,14 @@ private:
 
     darray zArray;
     darray rArray;
+    darray phiArray;
     darray ni;
-    std::vector <bool> lineCell;
+    
     uint nz;
     uint nr;
-    uint nParticles;
-    double sigma;
-    double theta;
-    std::pair<double, double> position;
+    uint nphi;
 
-
-    darray sArray;
-    std::vector <std::pair<uint, uint>> index;
-    uint ns = 0;
+    std::vector <Injector> injectors;
 
     double normaDensity;
 
@@ -89,12 +86,10 @@ private:
 
     bool isLine(const std::string &line, const std::string &name) const { return line.find(name) != std::string::npos && line.find(name + " end") == std::string::npos; } 
 
-    bool readPosition(std::istream &in, std::pair<double, double> &p);
+    bool readPosition(std::istream &in, double &rho, double &z, double &phi);
     bool readAxis(std::istream &in, darray &axis, uint &size, const std::string &name);
     bool readMesh(std::istream &in);
     bool readCount(std::istream &in);
-
-    bool generateInjectionLine();
 
     bool checkArray(bool *array, const uint N_PAR)
     {
@@ -112,9 +107,7 @@ private:
         array = test | array;
     }
 
-
-    bool traceLine(int step, uint &iz0, uint &ir0, double sinTheta, double cosTheta, double z0, double r0, std::vector <std::pair<std::pair<uint, uint>, double>> &temp,
-                   bool (*condition) (uint iz0, uint ir0, uint nz, uint nr)    );
+    bool readInjector(std::istream &in);
 
 public:
     

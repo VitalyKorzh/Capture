@@ -4,6 +4,8 @@
 #include <vector>
 
 #include "InputReader.h"
+#include "Line.h"
+#include "Injector.h"
 
 typedef std::vector<double> darray;
 typedef std::vector<unsigned> uiarray;
@@ -17,33 +19,39 @@ private:
     std::ostream &os;
     const uint nz;
     const uint nr;
+    const uint nphi;
     const darray &ni;
     const darray &zArray;
     const darray &rArray;
-    const uint nParticles;
-    const double sigma;
-    const double theta;
+    const darray &phiArray;
+    const std::vector <Injector> &injectors;
 
-    const darray &sArray;
-    const uint ns;
 
-    const std::pair<double, double> &position;
+    uint nParticles;
+    barray intersectionCell;
     uiarray nCap;
     uint nFlyby;
 
     void clearPrevious();
 
+    uint getIndex(uint iz, uint ir, uint iphi) const { return ir + nr*iz + nr*nz*iphi; }
+
+    void process(const Line &line, const Injector &injector, double gamma);
+
 public:
     Counter(std::istream &in=std::cin, std::ostream &os=std::cout);
     void count();
     
-    double getSigma() const { return sigma; }
-    uint getNParticles() const { return nParticles; }
     uint getNz() const { return nz; }
+    uint getNr() const { return nr; }
+    uint getNPhi() const { return nphi; }
     uint getNFlyply() const { return nFlyby; }
     const darray & getZArray() const { return zArray; }
+    const darray & getRArray() const { return rArray; }
+    const darray & getPhiArray() const { return phiArray; }
     const darray & getNi() const { return ni; }
     const uiarray & getNCap() const { return nCap; }
+    const barray & getIntersectionCell() const { return intersectionCell; }
 
 
     double getnCap(uint index) const { return ((double) nCap[index]) / nParticles; }

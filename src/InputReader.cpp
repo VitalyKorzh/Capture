@@ -3,86 +3,72 @@
 
 #include <cmath>
 
-bool InputReader::traceLine(int step, uint &iz0, uint &ir0, double sinTheta, double cosTheta, double z0, double r0, std::vector <std::pair<std::pair<uint, uint>, double>> &temp, 
-                            bool (*condition) (uint iz0, uint ir0, uint nz, uint nr))
+bool InputReader::readInjector(std::istream &in)
 {
-    double tPrevious = 0.;
-    const uint points = 4;
-    double t[points];
-    bool first = true;
-    while (condition(iz0, ir0, nz, nr))
+    double theta = -1;
+    uint nParticles = 0;
+    double r0 = 0;
+    double sigma = -1;
+
+    double rho = -1;
+    double z = 0;
+    double phi = -1;
+
+    std::string line;
+    if (!getline(in, line, true, true))
+        return false;
+
+    while(line.find("injector end") == std::string::npos)
     {
+        StringReader::getDoubleParameter(line, "theta ", theta);
+        StringReader::getUnsignedParameter(line, "particles ", nParticles);
+        StringReader::getDoubleParameter(line, "r0 ", r0);
+        StringReader::getDoubleParameter(line, "sigma ", sigma);
 
-        double z1 = zArray[iz0];
-        double z2 = zArray[iz0+1];
-        double r1 = rArray[ir0];
-        double r2 = rArray[ir0+1];
-
-        t[0] = (z1 - z0) / cosTheta;
-        t[1] = (z2 - z0) / cosTheta;
-        t[2] = (r1 - r0) / sinTheta;
-        t[3] = (r2 - r0) / sinTheta;
-
-        double l = 0;
-
-        bool find = false;
-
-        for (uint it = 0; it < points; it++)
+        if (line.find("position") != std::string::npos)
         {
-            if ((t[it] >= tPrevious && step < 0) || ((t[it] <= tPrevious) && step > 0) )
-                continue;
-
-            double z = z0 + t[it]*cosTheta;
-            double r = r0 + t[it]*sinTheta;
-            l = std::abs(tPrevious - t[it]);
-
-            if ( ((z >= z1 && z <= z2) || (it < 2))  && ((r >= r1 && r <= r2) || it > 1))
-            {
-                switch (it)
-                {
-                case 0:
-                    iz0 += step;
-                    break;
-                case 1:
-                    iz0 += step;
-                    break;
-                case 2:
-                    ir0 -= step;
-                    break;
-                case 3:
-                    ir0 -= step;
-                    break;
-                }
-                tPrevious = t[it];
-                find = true;
-                break;
-            }
-
+            if (!readPosition(in, rho, z, phi))
+                return false;
         }
 
-        if (!find)
+        skip(in, line, true);
+        if (in.fail()) 
         {
-            errorMessage("не удалось построить линию");
+            errorMessage("не найдено закрытие injector end");
             return false;
         }
-
-        if (!first)
-            temp.back().second = l;
-        else
-        {
-            temp.front().second += l;
-            first = false;
-        }
-        if (condition(iz0, ir0, nz, nr)) {
-            temp.emplace_back(std::pair<uint, uint>(iz0, ir0), 0);
-            ns++;
-        }
-
-
     }
 
+
+    if (theta <= 0. || theta > 90.)
+    {
+        errorMessage("угол в неправильном диапозоне 0 < theta <= 90");
+        return false;
+    }
+
+    if (nParticles == 0)
+    {
+        errorMessage("не правильное число частиц particles > 0");
+        return false;
+    }
+
+    if (sigma <= 0.)
+    {
+        errorMessage("сечение захват > 0");
+        return false;
+    }
+
+    if (r0 < 0.)
+    {
+        errorMessage("разброс пучка r0 >= 0");
+        return false;
+    }
+
+    theta *= M_PI / 180.;
+
+    injectors.push_back(Injector(rho, phi, z, sigma, r0, theta, nParticles));
+
     return true;
-        
 }
 
 InputReader::InputReader(std::istream &in)
@@ -94,9 +80,7 @@ InputReader::InputReader(std::istream &in)
     
     {
         precision = 10;
-        sigma = 0.;
         normaDensity = 1.;
-        nParticles = 0;
     }
     
     bool findMesh = false;
@@ -137,11 +121,6 @@ InputReader::InputReader(std::istream &in)
     {
         work = false;
         errorMessage("не указан count");
-    }
-
-    if (!generateInjectionLine())
-    {
-        work = false;
     }
 
 }
@@ -194,6 +173,8 @@ bool InputReader::readMesh(std::istream &in)
     if (!getline(in, line, true))
         return false;
 
+    nphi = 0;
+
     while(line.find("mesh end") == std::string::npos)
     {
         if (!line.empty() && !isComment(line))
@@ -207,12 +188,19 @@ bool InputReader::readMesh(std::istream &in)
             {
                 if (!readAxis(in, rArray, nr, "r"))
                     return false;
+
+                if (rArray.front() != 0.)
+                {
+                    errorMessage("сетка по r должна начинаться с нуля");
+                    return false;
+                }
+
             }
             else if (line.find("ni") != std::string::npos && nz > 0)
             {
                 ni.clear();
-                ni.resize(nz);
-                for (uint i = 0; i < nz; i++)
+                ni.resize(nz*nr);
+                for (uint i = 0; i < nr; i++)
                 {
                     double val;
                     in >> val;
@@ -221,7 +209,9 @@ bool InputReader::readMesh(std::istream &in)
                         errorMessage("не правильное значение плотности ионов [ni >= 0]");
                         return false;
                     }
-                    ni[i] = val;
+
+                    for (uint j = 0; j < nz; j++)
+                        ni[i+nr*j] = val;
                 }
                 
                 if (in.fail())
@@ -231,6 +221,8 @@ bool InputReader::readMesh(std::istream &in)
                 }
 
             }
+
+            StringReader::getUnsignedParameter(line, "Nphi=", nphi);
                 
             if(in.fail()) {
                 errorMessage("ошибки при чтения данных");
@@ -243,6 +235,17 @@ bool InputReader::readMesh(std::istream &in)
             errorMessage("не найдено закрытие mesh end");
             return false;
         }
+    }
+
+    phiArray.clear();
+    phiArray.resize(nphi+1);
+    for (uint iphi = 0; iphi < nphi+1; iphi++)
+        phiArray[iphi] = 2.*M_PI * iphi / nphi;
+
+    if (nphi == 0)
+    {
+        errorMessage("Nphi не указан");
+        return false;
     }
 
     if (zArray.empty())
@@ -264,36 +267,45 @@ bool InputReader::readMesh(std::istream &in)
     return true;
 }
 
-bool InputReader::readPosition(std::istream &in, std::pair<double, double> &p)
+bool InputReader::readPosition(std::istream &in, double &rho, double &z, double &phi)
 {
     std::string line;
-    
-    double p1, p2;
-    const uint N_PAR = 2;
-    bool array[] = {false, false};
+
+    const uint N_PAR = 3;
+    bool array[] = {false, false, false};
+    z = 0;
 
     for (uint i = 0; i < N_PAR; i++)
     {
         skip(in, line, true);
-        arrayBit(array[0], StringReader::getDoubleParameter(line, "z ", p1));
-        arrayBit(array[1], StringReader::getDoubleParameter(line, "r ", p2));
+        arrayBit(array[0], StringReader::getDoubleParameter(line, "z ", z));
+        arrayBit(array[1], StringReader::getDoubleParameter(line, "rho ", rho));
+        arrayBit(array[2], StringReader::getDoubleParameter(line, "phi ", phi));
     }
 
-    if (checkArray(array, N_PAR))
+    if (rho < 0)
     {
-        p.first = p1;
-        p.second = p2; //потом добавить условие больше нуля
+        errorMessage("не правельно указано минимальное расстояние до оси rho >= 0");
+        return false;
     }
-    else
+    if (phi < 0 || phi > 360)
+    {
+        errorMessage("не правильный угол 0<=phi<360");
+        return false;
+    }
+
+    if (!checkArray(array, N_PAR))
     {
         errorConfigConstNumberPar(
             "не указаны все параметры position [",
-            {"z", "r"},
+            {"z", "rho", "phi"},
             array,
             N_PAR
         );
         return false;
     }
+
+    phi *= M_PI/180.;
 
     if (in.fail()) 
     {
@@ -386,10 +398,6 @@ bool InputReader::readAxis(std::istream &in, darray &axis, uint &size, const std
 
 bool InputReader::readCount(std::istream &in)
 {
-    sigma = -1.;
-    theta = 0;
-    position.first = 0;
-    position.second = 0;
     std::string line;
     if (!getline(in, line, true, true))
         return false;
@@ -398,13 +406,9 @@ bool InputReader::readCount(std::istream &in)
     {
         if (!line.empty() && !isComment(line))
         {
-            StringReader::getDoubleParameter(line, "sigma ", sigma);
-            StringReader::getUnsignedParameter(line, "particles ", nParticles);
-            StringReader::getDoubleParameter(line, "theta ", theta);
-
-            if (line.find("position") != std::string::npos)
+            if (isLine(line, "injector"))
             {
-                if (!readPosition(in, position))
+                if (!readInjector(in))
                     return false;
             }
 
@@ -420,180 +424,6 @@ bool InputReader::readCount(std::istream &in)
             return false;
         }
     }
-
-    if (nParticles == 0)
-    {
-        errorMessage("указано не правильное число частиц particles[>0]");
-        return false;
-    }
-    if (sigma < 0)
-    {
-        errorMessage("указано не правильная сечение sigma [>0]");
-        return false;
-    }
-    if (theta < 0. || theta > 90.)
-    {
-        errorMessage("не указан правильный угол инжекции theta [>=0 <=90]");
-        return false;
-    }
-
-    theta *= M_PI/180.;
-
-    return true;
-}
-
-bool InputReader::generateInjectionLine()
-{
-    ns = 0;
-    sArray.clear();
-    index.clear();
-    lineCell.clear();
-    lineCell.resize(nz*nr, false);
-
-    double cosTheta = cos(theta);
-    double sinTheta = -sin(theta);
-    double z0 = position.first;
-    double r0 = position.second;
-
-    // z = z0 + t*cos(theta)
-    // r = r0 + t*sin(theta)
-    uint iz0 = 0;
-    uint ir0 = 0;
-
-    bool found = false;
-
-    for (uint iz = 0; iz < nz; iz++)
-    {
-        double z1 = zArray[iz];
-        double z2 = zArray[iz+1];
-
-        if (z0 >= z1 && z0 < z2)
-        {
-            iz0 = iz;
-            found = true;
-            break;
-        }
-    }
-
-    if (!found) {
-        errorMessage("начальная точка не найдена по z");
-        return false;
-    }
-
-    found = false;
-    for (uint ir = 0; ir < nr; ir++)
-    {
-        double r1 = rArray[ir];
-        double r2 = rArray[ir+1];
-
-        if (r0 > r1 && r0 < r2)
-        {
-            ir0 = ir;
-            found = true;
-            break;
-        }
-        else if (r0 == r1)
-        {
-            double t = (zArray[iz0] - z0) / cosTheta;
-
-            z0 = z0 + t/2.*cosTheta;
-            r0  = r0 + t/2.*sinTheta;
-            ir0 = ir;
-            found = true;
-            break;
-        }
-
-    }
-
-
-    if (z0 == zArray[iz0])
-    {
-        double t = (rArray[ir0] - r0) / sinTheta;
-        z0 = z0 + t/2.*cosTheta;
-        r0  = r0 + t/2.*sinTheta;
-    }
-
-
-    if (!found) {
-        errorMessage("начальная точка не найдена по r");
-        return false;
-    }
-
-    if (fabs(sinTheta) < 1e-10)
-    {
-        for (uint iz = 0; iz < nz; iz++) {
-            index.emplace_back(iz, ir0);
-            sArray.push_back(zArray[iz+1] - zArray[iz]);
-            ns++;
-        }
-    }
-    else if (fabs(cosTheta) < 1e-10)
-    {
-        for (uint ir = nr-1; ir+1 > 0; ir--) {
-            index.emplace_back(iz0, ir);
-            sArray.push_back(rArray[ir+1] - rArray[ir]);
-            ns++;
-        }
-    }
-    else
-    {
-        std::vector <std::pair<std::pair<uint, uint>, double>> temp;
-        temp.emplace_back(std::pair<uint, uint>(iz0, ir0), 0);
-        ns++;
-        const uint iz0_start = iz0;
-        const uint ir0_start = ir0;
-
-        //трасировка назад
-        if (!traceLine(-1, iz0, ir0, sinTheta, cosTheta, z0, r0, temp, [](uint iz0, uint ir0, uint nz, uint nr) 
-            { 
-                return iz0 > 0 && ir0 < nr; 
-            } 
-        ))
-            return false;
-        
-        iz0 = iz0_start;
-        ir0 = ir0_start;
-        // трасировка вперед
-        if (!traceLine(1, iz0, ir0, sinTheta, cosTheta, z0, r0, temp, [](uint iz0, uint ir0, uint nz, uint nr) 
-            {
-                return iz0 < nz && ir0 > 0;
-            } 
-        ))
-            return false;
-        
-        std::sort(temp.begin(), temp.end(), 
-            [] (const std::pair<std::pair<uint, uint>, double> &a, const std::pair<std::pair<uint, uint>, double> &b) {
-                const std::pair<uint, uint> &ai = a.first;
-                const std::pair<uint, uint> &bi = b.first;
-                if (ai.second < bi.second)
-                    return false;
-                else if (ai.second > bi.second)
-                    return true;
-                else
-                {
-                    return ai.first < bi.first;
-                }
-            }
-        );
-
-        sArray.reserve(ns);
-        index.reserve(ns);
-        for (uint is = 0; is < ns; is++) {
-            sArray.push_back(temp[is].second);
-            index.emplace_back(temp[is].first.first, temp[is].first.second);
-        }
-
-    }
-
-
-    if (sArray.empty() || index.empty())
-    {
-        errorMessage("линия инжекции не пересекает сетку");
-        return false;
-    }
-
-    for (uint is = 0; is < ns; is++)
-        lineCell[index[is].first*nr+index[is].second] = true;
 
     return true;
 }
