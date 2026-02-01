@@ -1,6 +1,7 @@
 #include "Line.h"
 #include <cmath>
 #include <algorithm>
+#include <iostream>
 
 inline double Line::getRPoint(double t) const
 { 
@@ -193,6 +194,7 @@ bool Line::createDataArray(uint nz, uint nr, uint nphi,
             return false;
     }
 
+    std::cout << "t_start: " << 0 <<  " t_end: " << tPrevious << "\n";
 
     return true;
 }

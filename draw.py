@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import sys
 
 
 class Injector:
@@ -227,14 +228,18 @@ def readFileOut(filename):
     return data
 
 
-data = readFileOut("test.out")
+if __name__ == '__main__':
+
+    fileName = sys.argv[1]
+
+    data = readFileOut(fileName)
 
 
-ns = 0
-for i in data['intersection']:
-    if i:
-        ns+=1
+    ns = 0
+    for i in data['intersection']:
+        if i:
+            ns+=1
 
-print('ns =', ns)
+    print('ns =', ns)
 
-draw(data['zAxis'], data['rAxis'], data['phiAxis'], data['injectors'], data['intersection'], drawGrid0=True)
+    draw(data['zAxis'], data['rAxis'], data['phiAxis'], data['injectors'], data['intersection'], drawGrid0=True)
