@@ -13,7 +13,7 @@ class Injector:
         self.r0 = r0
 
 
-def drawGrid(ax, zArray : list, rArray : list, phiArray : list, nz : int, nr : int, nphi : int, intersection=[], color_default="black", color_inter='blue', linewidth_default=0.5, linewidth_inter=2, N=1000):
+def drawGrid(ax, zArray : list, rArray : list, phiArray : list, nz : int, nr : int, nphi : int, intersection=[], color_default="black", color_inter='blue', linewidth_default=0.5, linewidth_inter=2, N=1000, drawNotInter=True):
 
     while len(intersection) < nr*nz*nphi:
         intersection.append(False)
@@ -36,12 +36,14 @@ def drawGrid(ax, zArray : list, rArray : list, phiArray : list, nz : int, nr : i
                 if intersection[ir+nr*iz+iphi*nr*nz]:
                     linewidth = linewidth_inter
                     color = color_inter
+                elif not drawNotInter:
+                    continue
 
                 ax.plot3D(np.ones(N)*zArray[iz], r1*np.cos(phi), r1*np.sin(phi), color=color, linewidth=linewidth)
                 ax.plot3D(np.ones(N)*zArray[iz], r2*np.cos(phi), r2*np.sin(phi), color=color, linewidth=linewidth)
-                if iz == nz-1:
-                    ax.plot3D(np.ones(N)*zArray[iz+1], r1*np.cos(phi), r1*np.sin(phi), color=color, linewidth=linewidth)
-                    ax.plot3D(np.ones(N)*zArray[iz+1], r2*np.cos(phi), r2*np.sin(phi), color=color, linewidth=linewidth)
+                #if iz == nz-1:
+                ax.plot3D(np.ones(N)*zArray[iz+1], r1*np.cos(phi), r1*np.sin(phi), color=color, linewidth=linewidth)
+                ax.plot3D(np.ones(N)*zArray[iz+1], r2*np.cos(phi), r2*np.sin(phi), color=color, linewidth=linewidth)
 
 
                 if (r1 != 0):
@@ -105,7 +107,7 @@ def drawCircle(ax, rho : float, phi : float, z0 : float, r0 : float, color="red"
 
 
 def draw(zArray : list, rArray : list, phiArray : list, injectorArray : list, intersection : list,
-         drawGrid0=True, drawLine0=True, drawInjectionCircle0=True, drawCirle0=True, drawAxis0=True):
+         drawGrid0=True, drawLine0=True, drawInjectionCircle0=True, drawCirle0=True, drawAxis0=True, drawNotInter=True, N=1000):
 
 
     if len(zArray) == 0 or len(rArray) == 0 or len(phiArray) == 0:
@@ -116,7 +118,7 @@ def draw(zArray : list, rArray : list, phiArray : list, injectorArray : list, in
     ax = fig.add_subplot(111, projection='3d')
 
     if (drawGrid0):
-        drawGrid(ax, zArray, rArray, phiArray, len(zArray)-1, len(rArray)-1, len(phiArray)-1, intersection) # рисуем сетку
+        drawGrid(ax, zArray, rArray, phiArray, len(zArray)-1, len(rArray)-1, len(phiArray)-1, intersection, linewidth_inter=0.5, drawNotInter=drawNotInter, N=N) # рисуем сетку
 
     listRho = []
     for injector in injectorArray:
@@ -130,10 +132,10 @@ def draw(zArray : list, rArray : list, phiArray : list, injectorArray : list, in
         if (drawLine0):
             drawLine(ax, rho, phi, theta, z0, rArray[-1], color="red") # рисуем линию инжекции
         if (drawInjectionCircle0 and not rho in listRho):
-            drawCircle(ax, 0, 0, z0, rho, drawSurf=False, linestyle="--", linewidth=1) # рисуем окружность радиусом rho
+            drawCircle(ax, 0, 0, z0, rho, drawSurf=False, linestyle="--", linewidth=1, N=N) # рисуем окружность радиусом rho
             listRho.append(rho)
         if r0 != 0 and drawCirle0:
-            drawCircle(ax, rho, phi, z0, r0, color="red") # рисумем разброс начальной точки
+            drawCircle(ax, rho, phi, z0, r0, color="red", N=N) # рисумем разброс начальной точки
 
     if drawAxis0:
         ax.plot3D([zArray[0], zArray[-1]], [0, 0], [0, 0], "--", color="black", linewidth=2) # рисуем ось
@@ -222,6 +224,8 @@ def readFileOut(filename):
 
                 for ir in  range(nr):
                     data['intersection'].append(bool(values[2*ir+1]))
+                    if values[2*ir+1]:
+                        print("iz:", iz, "ir:", ir, "iphi:", iphi)
                 
 
 
@@ -242,4 +246,4 @@ if __name__ == '__main__':
 
     print('ns =', ns)
 
-    draw(data['zAxis'], data['rAxis'], data['phiAxis'], data['injectors'], data['intersection'], drawGrid0=True)
+    draw(data['zAxis'], data['rAxis'], data['phiAxis'], data['injectors'], data['intersection'], drawGrid0=True, drawNotInter=False)

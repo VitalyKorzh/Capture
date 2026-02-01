@@ -85,7 +85,7 @@ private:
     inline double getPhiPoint(double t) const;
     
 
-    inline double getTR(double r) const;
+    inline double getTR(double r, double tPrevious=-1.) const;
     inline double getTZ(double z) const;
     inline double getTPhi(double phi) const;
 
