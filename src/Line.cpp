@@ -79,7 +79,7 @@ inline double Line::getTR(double r, double tPrevious) const
 
     double t_crit = d/sinTheta;
 
-    if (r > rho) {
+    if (r >= rho) {
         double sq = sqrt(r*r-rho2);
         t1 = 1./sinTheta * (d - sq);
         t2 = 1./sinTheta * (d + sq);
@@ -93,7 +93,7 @@ inline double Line::getTZ(double z) const
     if (cosTheta > 1e-12)
         return (z - z00) / cosTheta;
     else
-        return 1e12; // очень большой луч не пересикает
+        return -1.; // очень большой луч не пересикает
 }
 
 inline double Line::getTPhi(double phi) const
@@ -110,9 +110,20 @@ void Line::getNewIndex(const Boundary &boundary, uint &iZ, uint &iR, uint &iPhi)
     if (boundary.type == Boundary::IntersectionType::Z)
         iZ = boundary.index;
     else if (boundary.type == Boundary::IntersectionType::R)
+    {
         iR = boundary.index;
-    else
+        // if (iR == nr+1)
+        // {
+        //     iR = 0;
+        //     iPhi = nphi-1 - iPhi;
+        // }
+    }
+    else 
+    {
         iPhi = boundary.index;
+        if (iR == nr+1)
+            iPhi = nphi-1;
+    }
 
 }
 
@@ -122,9 +133,9 @@ LineData Line::traceLine(uint nz, uint nr, uint nphi, const darray &zArray, cons
     //double x_current = x00 + tPrevious * sx;
     //double y_current = y00 + tPrevious * sy;
 
-    double z_current = z00 + tPrevious * sz;
-    double r_current = getRPoint(tPrevious);
-    double phi_current = getPhiPoint(tPrevious);
+    //double z_current = z00 + tPrevious * sz;
+    //double r_current = getRPoint(tPrevious);
+    //double phi_current = getPhiPoint(tPrevious);
 
     double s = 0;
 
@@ -151,7 +162,7 @@ LineData Line::traceLine(uint nz, uint nr, uint nphi, const darray &zArray, cons
     {
         Boundary(getTZ(z1), Boundary::IntersectionType::Z, iZ > 0 ? iZ-1 : nz),
         Boundary(getTZ(z2), Boundary::IntersectionType::Z, iZ+1),
-        Boundary(getTR(r1, tPrevious), Boundary::IntersectionType::R, iR > 0 ? iR-1: nr),
+        Boundary(getTR(r1, tPrevious), Boundary::IntersectionType::R, iR > 0 ? iR-1: nr+1),
         Boundary(getTR(r2, tPrevious), Boundary::IntersectionType::R, iR+1),
         Boundary(getTPhi(phi1), Boundary::IntersectionType::Phi, iPhi > 0 ? (iPhi-1) % nphi : nphi-1),
         Boundary(getTPhi(phi2), Boundary::IntersectionType::Phi, (iPhi+1) % nphi )
@@ -179,6 +190,13 @@ LineData Line::traceLine(uint nz, uint nr, uint nphi, const darray &zArray, cons
     }
 
     LineData data(iZprev, iRprev, iPhiprev, s);
+
+    if (iR == nr+1)
+    {
+        iR = 0;
+        iPhi = nphi-1 - iPhiprev;
+    }
+
     return data;
 }
 
