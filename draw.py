@@ -1,6 +1,11 @@
 import matplotlib.pyplot as plt
 import numpy as np
+from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.cm as cm
+from matplotlib import colors
 import sys
+from matplotlib import colormaps
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 
 class Injector:
@@ -13,10 +18,30 @@ class Injector:
         self.r0 = r0
 
 
-def drawGrid(ax, zArray : list, rArray : list, phiArray : list, nz : int, nr : int, nphi : int, intersection=[], color_default="black", color_inter='blue', linewidth_default=0.5, linewidth_inter=2, N=1000, drawNotInter=True):
+def getIndex(iz, ir, iphi, nz, nr):
+    return ir + nr*iz + nz*nr*iphi
+
+# Название цветовой карты matplotlib:
+# - 'viridis', 'plasma', 'inferno', 'magma', 'cividis'
+# - 'jet', 'rainbow', 'coolwarm', 'RdYlBu', 'Spectral'
+# - 'hot', 'cool', 'spring', 'summer', 'autumn', 'winter'
+def getColor(value : float, min_value, max_value, color_map='plasma'):
+    normalized = (value - min_value) / (max_value - min_value) if max_value != min_value else 0.5
+    normalized = max(0.0, min(1.0, normalized))
+    
+    # Получаем цветовую карту
+    cmap = cm.get_cmap(color_map)
+    
+    # Получаем цвет
+    return cmap(normalized)
+
+def drawGrid(ax, zArray : list, rArray : list, phiArray : list, nz : int, nr : int, nphi : int, intersection=[], nCapture=[],
+             color_default="black", colormap='plasma', linewidth_default=0.5, linewidth_inter=2, N=1000, drawNotInter=True):
 
     while len(intersection) < nr*nz*nphi:
         intersection.append(False)
+    while len(nCapture) < nr*nz*nphi:
+        nCapture.append(0.)
 
     for iphi in range(nphi):
         for iz in range(nz):
@@ -33,9 +58,9 @@ def drawGrid(ax, zArray : list, rArray : list, phiArray : list, nz : int, nr : i
                 linewidth = linewidth_default
                 color = color_default
 
-                if intersection[ir+nr*iz+iphi*nr*nz]:
+                if intersection[getIndex(iz, ir, iphi, nz, nr)]:
                     linewidth = linewidth_inter
-                    color = color_inter
+                    color = getColor(nCapture[getIndex(iz, ir, iphi, nz, nr)], 0, max(nCapture), colormap)
                 elif not drawNotInter:
                     continue
 
@@ -55,8 +80,6 @@ def drawGrid(ax, zArray : list, rArray : list, phiArray : list, nz : int, nr : i
                 ax.plot3D([z2, z2], [r1*np.cos(phi1), r2*np.cos(phi1)], [r1*np.sin(phi1), r2*np.sin(phi1)], color=color, linewidth=linewidth)
                 ax.plot3D([z1, z1], [r1*np.cos(phi2), r2*np.cos(phi2)], [r1*np.sin(phi2), r2*np.sin(phi2)], color=color, linewidth=linewidth)
                 ax.plot3D([z2, z2], [r1*np.cos(phi2), r2*np.cos(phi2)], [r1*np.sin(phi2), r2*np.sin(phi2)], color=color, linewidth=linewidth)
-                
-
 
 def drawLine(ax, rho : float, phi : float, theta : float, z0 : float, Rmax : float, color="red", linewidth=2, linestyle="-", drawPoints=True, drawQuiver=True):
 
@@ -81,7 +104,6 @@ def drawLine(ax, rho : float, phi : float, theta : float, z0 : float, Rmax : flo
                 0.5*t*sz, 0.5*t*sx, 0.5*t*sy,
                 color=color, arrow_length_ratio=0.3, linewidth=linewidth)
 
-
 def drawSimpleCircleSurface(ax, rho, phi, z0, r0, color="red", alpha=0.3):
     angles = np.linspace(0, 2*np.pi, 50)
     radii = np.linspace(0, r0, 25)
@@ -104,11 +126,8 @@ def drawCircle(ax, rho : float, phi : float, z0 : float, r0 : float, color="red"
     if drawSurf:
         drawSimpleCircleSurface(ax, rho, phi, z0, r0, color)
 
-
-
-def draw(zArray : list, rArray : list, phiArray : list, injectorArray : list, intersection : list,
-         drawGrid0=True, drawLine0=True, drawInjectionCircle0=True, drawCirle0=True, drawAxis0=True, drawNotInter=True, N=1000):
-
+def draw(zArray : list, rArray : list, phiArray : list, injectorArray : list, intersection : list, nCapture : list,
+         drawGrid0=True, drawLine0=True, drawInjectionCircle0=True, drawCirle0=True, drawAxis0=True, drawNotInter=True, N=1000, colormap='plasma'):
 
     if len(zArray) == 0 or len(rArray) == 0 or len(phiArray) == 0:
         print("не правильная сетка")
@@ -118,7 +137,8 @@ def draw(zArray : list, rArray : list, phiArray : list, injectorArray : list, in
     ax = fig.add_subplot(111, projection='3d')
 
     if (drawGrid0):
-        drawGrid(ax, zArray, rArray, phiArray, len(zArray)-1, len(rArray)-1, len(phiArray)-1, intersection, linewidth_inter=0.5, drawNotInter=drawNotInter, N=N) # рисуем сетку
+        drawGrid(ax, zArray, rArray, phiArray, len(zArray)-1, len(rArray)-1, len(phiArray)-1, intersection, nCapture, 
+                 linewidth_inter=0.5, drawNotInter=drawNotInter, N=N, colormap=colormap) # рисуем сетку
 
     listRho = []
     for injector in injectorArray:
@@ -149,7 +169,6 @@ def draw(zArray : list, rArray : list, phiArray : list, injectorArray : list, in
 
     plt.show()
 
-
 def readAxis(file, data, type):
     line = ''
 
@@ -172,7 +191,8 @@ def readFileOut(filename):
         'rAxis' : [],
         'phiAxis' : [],
         'injectors' : [],
-        'intersection' : []
+        'intersection' : [],
+        'ncapture' : []
     }
 
     with open(filename, 'r') as file:
@@ -224,6 +244,7 @@ def readFileOut(filename):
 
                 for ir in  range(nr):
                     data['intersection'].append(bool(values[2*ir+1]))
+                    data['ncapture'].append(float(values[2*ir]))
                     if values[2*ir+1]:
                         print("iz:", iz, "ir:", ir, "iphi:", iphi)
                 
@@ -231,13 +252,11 @@ def readFileOut(filename):
 
     return data
 
-
 if __name__ == '__main__':
 
     fileName = sys.argv[1]
 
     data = readFileOut(fileName)
-
 
     ns = 0
     for i in data['intersection']:
@@ -246,4 +265,4 @@ if __name__ == '__main__':
 
     print('ns =', ns)
 
-    draw(data['zAxis'], data['rAxis'], data['phiAxis'], data['injectors'], data['intersection'], drawGrid0=True, drawNotInter=False)
+    draw(data['zAxis'], data['rAxis'], data['phiAxis'], data['injectors'], data['intersection'], data['ncapture'], drawGrid0=True, drawNotInter=False)

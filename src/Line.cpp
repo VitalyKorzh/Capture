@@ -112,11 +112,6 @@ void Line::getNewIndex(const Boundary &boundary, uint &iZ, uint &iR, uint &iPhi)
     else if (boundary.type == Boundary::IntersectionType::R)
     {
         iR = boundary.index;
-        // if (iR == nr+1)
-        // {
-        //     iR = 0;
-        //     iPhi = nphi-1 - iPhi;
-        // }
     }
     else 
     {
@@ -145,14 +140,6 @@ LineData Line::traceLine(uint nz, uint nr, uint nphi, const darray &zArray, cons
     double z2 = zArray[iZ+1];
     double phi1 = phiArray[iPhi];
     double phi2 = phiArray[iPhi+1];
-
-
-    /*if (r_current < r1 || r_current > r2)
-        std::cerr << "error trace r!\n";
-    if (z_current < z1 || z_current > z2)
-        std::cerr << "error trace z!\n";
-    if (phi_current < phi1 || phi_current > phi2)
-        std::cerr << "error trace phi!\n";*/
 
     const uint iZprev = iZ;
     const uint iRprev = iR;
@@ -191,7 +178,7 @@ LineData Line::traceLine(uint nz, uint nr, uint nphi, const darray &zArray, cons
 
     LineData data(iZprev, iRprev, iPhiprev, s);
 
-    if (iR == nr+1)
+    if (iR == nr+1) // луч прошел через ось
     {
         iR = 0;
         iPhi = nphi-1 - iPhiprev;
