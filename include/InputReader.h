@@ -45,6 +45,8 @@ private:
 
     double normaDensity;
 
+    double t_epsilon;
+
     uint countSpace(std::string line) const;
 
     std::istream & getline(std::istream &in, std::string &line, bool formatLine=false, bool ignoreEqual=false) 

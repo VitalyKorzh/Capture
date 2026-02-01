@@ -76,7 +76,7 @@ void Counter::count()
         double r0 = injector.r0;
 
         if (r0 == 0) {
-            Line line(rho, injector.theta, phi,  injector.z, nz, nr, nphi, zArray, rArray,  phiArray);
+            Line line(rho, injector.theta, phi,  injector.z, nz, nr, nphi, zArray, rArray,  phiArray, reader.t_epsilon);
             for (uint it = 0; it < injector.particles; it++)
                 if (line.getLineWork())
                     process(line, injector, distGamma(gen));
@@ -101,7 +101,7 @@ void Counter::count()
 
                 if (phi_new < 0) phi_new += 2 * M_PI;
 
-                Line line(rho_new, injector.theta, phi_new,  injector.z, nz, nr, nphi, zArray, rArray,  phiArray);
+                Line line(rho_new, injector.theta, phi_new,  injector.z, nz, nr, nphi, zArray, rArray,  phiArray, reader.t_epsilon);
                 if (line.getLineWork())
                     process(line, injector, distGamma(gen));
                 else {
@@ -140,7 +140,7 @@ void Counter::printStartInfo() const
     os << "#\n";
 
     os << "# count\n";
-
+    os << "# \tt-epsilon=" << reader.t_epsilon << "\n";
     for (Injector injector : injectors)
     {
         os << "# \tinjector\n";

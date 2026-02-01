@@ -42,7 +42,6 @@ private:
 
     };
 
-
     const double rho; // прицельный параметер
     const double rho2;
     const double theta; // питч-угол
@@ -79,6 +78,7 @@ private:
     double t_crit;
     bool crossAxis;
 
+    const double t_epsilon;
     bool lineWork; // удалось ли прорисовать луч
 
     inline double getXPoint(double t) const { return x00 + t * sx; }
@@ -105,7 +105,9 @@ private:
 public:
     Line(double rho, double theta, double phi0_rho, double z0_rho, 
         uint nz, uint nr, uint nphi, 
-        const darray &zArray, const darray &rArray, const darray &phiArray);
+        const darray &zArray, const darray &rArray, const darray &phiArray,
+        double t_epsilon=0.      
+    );
 
 
 

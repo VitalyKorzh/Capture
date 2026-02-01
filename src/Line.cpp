@@ -31,12 +31,12 @@ inline double Line::getPhiPoint(double t) const
 Line::Line(
     double rho, double theta, double phi0_rho, double z0_rho,
     uint nz, uint nr, uint nphi,
-    const darray &zArray, const darray &rArray, const darray &phiArray) : rho(rho), rho2(rho * rho),
+    const darray &zArray, const darray &rArray, const darray &phiArray, double t_epsilon) : rho(rho), rho2(rho * rho),
                                                                           theta(theta), phi0_rho(phi0_rho), z0_rho(z0_rho),
                                                                           sinTheta(sin(theta)), cosTheta(cos(theta)), sinPhi0(sin(phi0_rho)),
                                                                           cosPhi0(cos(phi0_rho)), sx(-sinTheta * sinPhi0),
                                                                           sy(sinTheta * cosPhi0), sz(cosTheta), intersectionPoints(nz * nr * nphi, false),
-                                                                          nz(nz), nr(nr), nphi(nphi), lineWork(false)
+                                                                          nz(nz), nr(nr), nphi(nphi), crossAxis(false), t_epsilon(t_epsilon), lineWork(false)
 
 {
     if (nz == 0 || nz == 0 || nphi == 0)
@@ -174,7 +174,7 @@ LineData Line::traceLine(uint nz, uint nr, uint nphi, const darray &zArray, cons
             findBoundary = true;
             getNewIndex(boundary, iZ, iR, iPhi);
         }
-        else if (t == tPrevious && findBoundary)
+        else if ((t - tPrevious <= t_epsilon && t >= tPrevious) && findBoundary)
             getNewIndex(boundary, iZ, iR, iPhi);
     }
 

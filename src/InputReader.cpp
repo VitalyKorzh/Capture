@@ -81,6 +81,7 @@ InputReader::InputReader(std::istream &in)
     {
         precision = 10;
         normaDensity = 1.;
+        t_epsilon = 0.;
     }
     
     bool findMesh = false;
@@ -406,6 +407,9 @@ bool InputReader::readCount(std::istream &in)
     {
         if (!line.empty() && !isComment(line))
         {
+
+            StringReader::getDoubleParameter(line, "t-epsilon ", t_epsilon);
+
             if (isLine(line, "injector"))
             {
                 if (!readInjector(in))
@@ -423,6 +427,12 @@ bool InputReader::readCount(std::istream &in)
             errorMessage("не найдено закрытие count end");
             return false;
         }
+    }
+
+    if (t_epsilon < 0)
+    {
+        errorMessage("указан не правильный порог t-epsilon >= 0");
+        return false;
     }
 
     return true;
