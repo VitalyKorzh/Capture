@@ -77,6 +77,7 @@ private:
     double zmax;
 
     double t_crit;
+    bool crossAxis;
 
     bool lineWork; // удалось ли прорисовать луч
 

@@ -112,7 +112,7 @@ void Line::getNewIndex(const Boundary &boundary, uint &iZ, uint &iR, uint &iPhi)
     {
         iR = boundary.index;
     }
-    else 
+    else if (!crossAxis)
     {
         iPhi = boundary.index;
         if (iR == nr+1)
@@ -182,6 +182,7 @@ LineData Line::traceLine(uint nz, uint nr, uint nphi, const darray &zArray, cons
 
     if (iR == nr+1) // луч прошел через ось
     {
+        crossAxis = true;
         iR = 0;
         double phi_new = phi_current+M_PI >= 2. * M_PI ? phi_current - M_PI : phi_current + M_PI;
         for (uint iphi = 0; iphi < nphi; iphi++)
@@ -189,6 +190,8 @@ LineData Line::traceLine(uint nz, uint nr, uint nphi, const darray &zArray, cons
                iPhi = iphi;
         //iPhi = (nphi/2 + iPhiprev) % nphi;
     }
+    else
+        crossAxis = false;
 
     return data;
 }
@@ -198,6 +201,7 @@ bool Line::createDataArray(uint nz, uint nr, uint nphi,
                             const darray &phiArray)
 {
     double tPrevious = 0.;
+    crossAxis = false;
     uint iR = nr-1;
     uint iZ = 0;
     uint iPhi = 0;
