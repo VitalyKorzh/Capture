@@ -53,6 +53,7 @@ Line::Line(
         return;
 
     d = sqrt(Rmax*Rmax - rho*rho);
+    t_crit = d / sinTheta;
 
     x00 = rho*cosPhi0 + d * sinPhi0;
     y00 = rho*sinPhi0 - d * cosPhi0;
@@ -76,8 +77,6 @@ inline double Line::getTR(double r, double tPrevious) const
 {
     double t1 = -1.;
     double t2 = -1.;
-
-    double t_crit = d/sinTheta;
 
     if (r >= rho) {
         double sq = sqrt(r*r-rho2);
@@ -125,12 +124,12 @@ void Line::getNewIndex(const Boundary &boundary, uint &iZ, uint &iR, uint &iPhi)
 LineData Line::traceLine(uint nz, uint nr, uint nphi, const darray &zArray, const darray &rArray, const darray &phiArray, double &tPrevious, uint &iZ, uint &iR, uint &iPhi)
 {
 
-    //double x_current = x00 + tPrevious * sx;
-    //double y_current = y00 + tPrevious * sy;
+    double x_current = x00 + tPrevious * sx;
+    double y_current = y00 + tPrevious * sy;
 
-    //double z_current = z00 + tPrevious * sz;
-    //double r_current = getRPoint(tPrevious);
-    //double phi_current = getPhiPoint(tPrevious);
+    double z_current = z00 + tPrevious * sz;
+    double r_current = getRPoint(tPrevious);
+    double phi_current = getPhiPoint(tPrevious);
 
     double s = 0;
 
@@ -145,12 +144,15 @@ LineData Line::traceLine(uint nz, uint nr, uint nphi, const darray &zArray, cons
     const uint iRprev = iR;
     const uint iPhiprev = iPhi;
 
+    double t_r1 = getTR(r1, tPrevious);
+    double t_r2 = getTR(r2, t_r1 >= 0. ? tPrevious : t_crit+1.);
+
     std::vector<Boundary> boundaries= 
     {
         Boundary(getTZ(z1), Boundary::IntersectionType::Z, iZ > 0 ? iZ-1 : nz),
         Boundary(getTZ(z2), Boundary::IntersectionType::Z, iZ+1),
-        Boundary(getTR(r1, tPrevious), Boundary::IntersectionType::R, iR > 0 ? iR-1: nr+1),
-        Boundary(getTR(r2, tPrevious), Boundary::IntersectionType::R, iR+1),
+        Boundary(t_r1, Boundary::IntersectionType::R, iR > 0 ? iR-1: nr+1),
+        Boundary(t_r2, Boundary::IntersectionType::R, iR+1),
         Boundary(getTPhi(phi1), Boundary::IntersectionType::Phi, iPhi > 0 ? (iPhi-1) % nphi : nphi-1),
         Boundary(getTPhi(phi2), Boundary::IntersectionType::Phi, (iPhi+1) % nphi )
     };

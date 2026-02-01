@@ -76,6 +76,8 @@ private:
     double zmin;
     double zmax;
 
+    double t_crit;
+
     bool lineWork; // удалось ли прорисовать луч
 
     inline double getXPoint(double t) const { return x00 + t * sx; }

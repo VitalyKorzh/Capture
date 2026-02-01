@@ -83,6 +83,9 @@ class Draw:
                     line = file.readline()
                     phi = float([i for i in line.split('=')][-1]) * np.pi / 180.
 
+                    rmax = data['rAxis'][-1]
+                    print("injection l:", 2.*np.sqrt(rmax*rmax-rho*rho) / np.sin(theta))
+
                     data['injectors'].append(Injector(rho, phi, z0, theta, r0))
 
 
