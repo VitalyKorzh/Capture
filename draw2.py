@@ -1,11 +1,11 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from mpl_toolkits.mplot3d import Axes3D
+#from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.cm as cm
-from matplotlib import colors
+#from matplotlib import colors
 import sys
-from matplotlib import colormaps
-from mpl_toolkits.axes_grid1 import make_axes_locatable
+#from matplotlib import colormaps
+#from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 class Injector:
 
@@ -54,16 +54,21 @@ class Draw:
             'phiAxis' : [],
             'injectors' : [],
             'intersection' : [],
-            'ncapture' : []
+            'ncapture' : [],
+            'sarray' : []
         }
 
         with open(filename, 'r') as file:
             
-            line = ''
+            line = file.readline()
+
+            line = file.readline()
+
+            self.normaN = float(line.split('=')[-1])
 
             self.__readAxis(file, data, 'z')
             self.__readAxis(file, data, 'r')
-            self.__readAxis(file, data, 'phi') 
+            self.__readAxis(file, data, 'phi')
 
             while not 'count end' in line:
                 
@@ -99,6 +104,21 @@ class Draw:
             while not 'nCapture=' in line:
                 line = file.readline()
 
+                if 'result injector' in line:
+                    line = file.readline()
+                    ns = int(line.split("=")[-1])
+                    print("ns:", ns)
+                    data['sarray'].append(np.zeros(3*ns+1))
+
+                    for i in range(ns):
+                        line = file.readline()
+                        value = [float(i) for i in line.split()]
+                        data['sarray'][-1][1+i] = value[1]
+                        data['sarray'][-1][1+i+ns] = value[2]
+                        data['sarray'][-1][1+i+2*ns] = value[3]
+
+            ncap = float( line.split(("="))[-1].split("%")[0] )
+            print("ncap =", ncap, '%')
 
             for iphi in range(nphi):
                 line = file.readline()
@@ -245,6 +265,41 @@ class Draw:
         ax.set_ylim(-2*self.rArray[-1], 2*self.rArray[-1])
         ax.set_zlim(-2*self.rArray[-1], 2*self.rArray[-1])
 
+    def drawCapFromLine(self):
+        fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(12, 6))
+
+        ax1 = axes[0]
+        ax2 = axes[1]
+
+        for sarray in self.sarray:
+            ns = int((len(sarray) - 1) / 3)
+
+            x = np.zeros(ns+1)
+            y = np.zeros(ns+1)
+            z = np.zeros(ns+1)
+            sumY = 0
+
+            for i in range(ns):
+                x[i+1] = sarray[1+i]
+                y[i+1] = sarray[1+i+1*ns]*self.normaN
+                z[i+1] = sarray[1+i+2*ns] / (sarray[1+i] - sarray[i])
+                
+                sumY += sarray[1+i+2*ns]
+
+            y[0] = y[1]
+            z[0] = z[1]
+            ax1.step(x, z)
+            ax1.grid()
+            ax1.set(xlabel='s, см', ylabel='ncap, см^-1')
+            ax2.step(x, y)
+            ax2.grid()
+            ax2.set(xlabel='s, см', ylabel='ni, см^-3')
+            print("sum, ", sumY)
+
+
+    def drawCapFromR(self):
+        pass
+
     def __init__(self, fileName, 
                  drawMesh=True, drawInjectorLine=True, drawInjectorCircle=True, 
                  drawCircleRho=True, drawAxis=True, drawNotInter=True,
@@ -262,6 +317,7 @@ class Draw:
         self.nCapture = data['ncapture']
         self.injectors = data['injectors']
         self.intersection = data['intersection']
+        self.sarray = data['sarray']
         self.nz = len(self.zArray) - 1
         self.nr = len(self.rArray) - 1
         self.nphi = len(self.phiArray) - 1
@@ -298,10 +354,12 @@ class Draw:
         self.linewidthMesh = linewidthMesh
         self.linewidthInter = linewidthIner
 
-    def show(self, draw3d=True):
+    def show(self, draw3d=False, drawFromLine=True):
 
         if draw3d:
             self.draw3D()
+        if drawFromLine:
+            self.drawCapFromLine()
         
         plt.show()
 

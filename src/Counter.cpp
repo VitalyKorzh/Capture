@@ -82,7 +82,7 @@ void Counter::printSArray(const darray &sArray, uint i)
 {
     uint ns = (sArray.size()-1) / 3;
     os << "# result injector " << i << "\n";
-
+    os << "# ns=" << ns << "\n";
     double full = 0;
     for (uint i = 0; i < ns; i++)
         full += sArray[i+1+2*ns];
