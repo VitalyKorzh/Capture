@@ -47,6 +47,8 @@ private:
 
     double t_epsilon;
 
+    double Bcenter;
+
     uint countSpace(std::string line) const;
 
     std::istream & getline(std::istream &in, std::string &line, bool formatLine=false, bool ignoreEqual=false) 

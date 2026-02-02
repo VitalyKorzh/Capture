@@ -322,8 +322,14 @@ class Draw:
 
         for ir in range(self.nr):
             for iz in range(self.nz):
+                z1 = self.zArray[iz]
+                z2 = self.zArray[iz+1]
                 for iphi in range(self.nphi):
-                    nf[ir+1] += self.nCapture[self.__getIndex(iz, ir, iphi)] / self.__volume(iz, ir, iphi)
+                    phi1 = self.phiArray[iphi]
+                    phi2 = self.phiArray[iphi+1]
+                    nf[ir+1] += (self.nCapture[self.__getIndex(iz, ir, iphi)] / self.__volume(iz, ir, iphi) *
+                                (z2 - z1) * (phi2 - phi1) / (2.*np.pi*(self.zArray[-1]-self.zArray[0])))
+                                
 
 
         nf[0] = nf[1]

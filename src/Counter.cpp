@@ -18,6 +18,11 @@ void Counter::clearPrevious()
         intersectionCell[i] = false;
 }
 
+double Counter::rhoLarmor(double E, double theta, double phi, double B, double M, double Q) const
+{
+    return sqrt(2*E*M*PhysicValues::C*PhysicValues::C) / (Q*B) * sin(theta);
+}
+
 Counter::Counter(std::istream &in, std::ostream &os) : reader(in), os(os), nz(reader.nz), nr(reader.nr), nphi(reader.nphi),
                                                        ni(reader.ni), zArray(reader.zArray), rArray(reader.rArray),
                                                        phiArray(reader.phiArray), injectors(reader.injectors), nParticles(0), intersectionCell(nr * nz * nphi, false),
@@ -63,7 +68,7 @@ void Counter::process(const Line &line, const Injector &injector, double gamma, 
 
 }
 
-darray Counter::fillSArray(const Line &line)
+darray Counter::fillSArray(const Line &line) const
 {
     uint ns = line.getNs();
 
@@ -78,7 +83,7 @@ darray Counter::fillSArray(const Line &line)
     return sArray;
 }
 
-void Counter::printSArray(const darray &sArray, uint i)
+void Counter::printSArray(const darray &sArray, uint i) const
 {
     uint ns = (sArray.size()-1) / 3;
     os << "# result injector " << i << "\n";

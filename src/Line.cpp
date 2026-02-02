@@ -229,14 +229,14 @@ bool Line::createDataArray(uint nz, uint nr, uint nphi,
     ns = 0;
 
     while (iZ != nz && iR != nr) {
-        std::cout << "iz: " << iZ << " ir: " << iR << " iphi: " << iPhi << "\n";
+        //std::cout << "iz: " << iZ << " ir: " << iR << " iphi: " << iPhi << "\n";
         data.push_back(traceLine(nz, nr, nphi, zArray, rArray, phiArray, tPrevious, iZ, iR, iPhi));
         ns++;
         if (ns > nr*nz*nphi)
             return false;
     }
 
-    std::cout << "t_start: " << 0 <<  " t_end: " << tPrevious << "\n";
+    //std::cout << "t_start: " << 0 <<  " t_end: " << tPrevious << "\n";
 
     return true;
 }

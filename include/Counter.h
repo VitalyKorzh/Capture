@@ -38,8 +38,11 @@ private:
 
     void process(const Line &line, const Injector &injector, double gamma, darray *sArray=nullptr);
 
-    darray fillSArray(const Line &line); 
-    void printSArray(const darray &sArray, uint i);
+    darray fillSArray(const Line &line) const; 
+    void printSArray(const darray &sArray, uint i) const;
+
+
+    double rhoLarmor(double E, double theta, double phi, double B, double M, double Q) const;
 
 public:
     Counter(std::istream &in=std::cin, std::ostream &os=std::cout);

@@ -82,6 +82,7 @@ InputReader::InputReader(std::istream &in)
         precision = 10;
         normaDensity = 1.;
         t_epsilon = 0.;
+        Bcenter = 0.;
     }
     
     bool findMesh = false;
@@ -409,6 +410,7 @@ bool InputReader::readCount(std::istream &in)
         {
 
             StringReader::getDoubleParameter(line, "t-epsilon ", t_epsilon);
+            StringReader::getDoubleParameter(line, "Bcenter ", Bcenter);
 
             if (isLine(line, "injector"))
             {
@@ -432,6 +434,12 @@ bool InputReader::readCount(std::istream &in)
     if (t_epsilon < 0)
     {
         errorMessage("указан не правильный порог t-epsilon >= 0");
+        return false;
+    }
+
+    if (Bcenter < 0)
+    {
+        errorMessage("указано не верное магнитное поле Bcenter>=0");
         return false;
     }
 
