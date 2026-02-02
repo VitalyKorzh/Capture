@@ -9,12 +9,33 @@ import sys
 
 class Injector:
 
-    def __init__(self, rho, phi, z0, theta, r0):
+    def __init__(self, rho, phi, z0, theta, r0, E, Z, M):
         self.rho = rho
         self.phi = phi
         self.z0 = z0
         self.theta = theta
         self.r0 = r0
+        self.E = E
+        self.Z = Z
+        self.M = M
+
+        self.C = 3e10
+
+
+    def Omega(self, B):
+        return self.Z*B/(self.M*self.C)
+    
+    def getV(self):
+        return np.sqrt(2.*self.E / self.M)
+
+    def getVx(self):
+        return -self.getV()*np.sin(self.theta)*np.sin(self.phi) 
+    
+    def getVy(self):
+        return self.getV()*np.sin(self.theta)*np.cos(self.phi)
+    
+    def getVz(self):
+        return self.getV()*np.cos(self.theta)
 
 class Draw:
 
@@ -105,10 +126,23 @@ class Draw:
                     line = file.readline()
                     phi = float([i for i in line.split('=')][-1]) * np.pi / 180.
 
+                    line = file.readline()
+                    line = file.readline()
+
+                    E = float(line.split('=')[-1])*1.6e-12
+
+                    line = file.readline()
+
+                    Z = int(line.split('=')[-1])*4.8e-10
+
+                    line = file.readline()
+
+                    M = int(line.split('=')[-1])*1.67e-24
+
                     rmax = data['rAxis'][-1]
                     print("injection l:", 2.*np.sqrt(rmax*rmax-rho*rho) / np.sin(theta))
 
-                    data['injectors'].append(Injector(rho, phi, z0, theta, r0))
+                    data['injectors'].append(Injector(rho, phi, z0, theta, r0, E, Z, M))
 
 
                 line = file.readline()
@@ -311,7 +345,7 @@ class Draw:
             ax2.step(x, y)
             ax2.grid()
             ax2.set(xlabel='s, см', ylabel='ni, 10^13 см^-3')
-            print("sum, ", sumY)
+            print("sum ncap_s: ", sumY)
 
 
     def drawCapFromR(self):
@@ -391,7 +425,7 @@ class Draw:
         self.linewidthMesh = linewidthMesh
         self.linewidthInter = linewidthIner
 
-    def show(self, draw3d=False, drawFromLine=True, drawCapFromR=True):
+    def show(self, draw3d=True, drawFromLine=True, drawCapFromR=True):
 
         if draw3d:
             self.draw3D()

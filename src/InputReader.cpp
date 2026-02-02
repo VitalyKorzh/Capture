@@ -14,6 +14,11 @@ bool InputReader::readInjector(std::istream &in)
     double z = 0;
     double phi = -1;
 
+
+    uint Z = 1;
+    uint M = 1;
+    double E = 0;
+
     std::string line;
     if (!getline(in, line, true, true))
         return false;
@@ -28,6 +33,12 @@ bool InputReader::readInjector(std::istream &in)
         if (line.find("position") != std::string::npos)
         {
             if (!readPosition(in, rho, z, phi))
+                return false;
+        }
+
+        if (line.find("particle") != std::string::npos && line.find("particles") == std::string::npos)
+        {
+            if (!readParticle(in, E, Z, M))
                 return false;
         }
 
@@ -66,7 +77,7 @@ bool InputReader::readInjector(std::istream &in)
 
     theta *= M_PI / 180.;
 
-    injectors.push_back(Injector(rho, phi, z, sigma, r0, theta, nParticles));
+    injectors.push_back(Injector(rho, phi, z, sigma, r0, theta, nParticles, E, M, Z));
 
     return true;
 }
@@ -317,6 +328,59 @@ bool InputReader::readPosition(std::istream &in, double &rho, double &z, double 
 
     return true;
 }
+
+
+bool InputReader::readParticle(std::istream &in, double &E, uint &Z, uint &M)
+{
+    std::string line;
+
+    const uint N_PAR = 3;
+    bool array[] = {false, false, false};
+
+    for (uint i = 0; i < N_PAR; i++)
+    {
+        skip(in, line, true);
+        arrayBit(array[0], StringReader::getDoubleParameter(line, "E ", E));
+        arrayBit(array[1], StringReader::getUnsignedParameter(line, "Z ", Z));
+        arrayBit(array[2], StringReader::getUnsignedParameter(line, "M ", M));
+    }
+
+    if (E < 0)
+    {
+        errorMessage("не правельно указана энергия E >= 0");
+        return false;
+    }
+    if (Z == 0)
+    {
+        errorMessage("не правильный заряд Z > 0");
+        return false;
+    }
+    if (M == 0)
+    {
+        errorMessage("не правильная масса M > 0");
+        return false;
+    }
+
+    if (!checkArray(array, N_PAR))
+    {
+        errorConfigConstNumberPar(
+            "не указаны все параметры position [",
+            {"E", "Z", "M"},
+            array,
+            N_PAR
+        );
+        return false;
+    }
+
+    if (in.fail()) 
+    {
+        errorMessage("не удалось прочитать particle");
+        return false;
+    }
+
+    return true;
+}
+
 
 bool InputReader::readAxis(std::istream &in, darray &axis, uint &size, const std::string &name)
 {

@@ -91,6 +91,7 @@ private:
     bool isLine(const std::string &line, const std::string &name) const { return line.find(name) != std::string::npos && line.find(name + " end") == std::string::npos; } 
 
     bool readPosition(std::istream &in, double &rho, double &z, double &phi);
+    bool readParticle(std::istream &in, double &E, uint &Z, uint &M);
     bool readAxis(std::istream &in, darray &axis, uint &size, const std::string &name);
     bool readMesh(std::istream &in);
     bool readCount(std::istream &in);

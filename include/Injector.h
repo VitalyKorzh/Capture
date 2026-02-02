@@ -2,6 +2,7 @@
 #define __INJECTOR_H__
 
 #include  "PhysicValues.h"
+#include <cmath>
 
 struct Injector
 {
@@ -42,6 +43,14 @@ struct Injector
     double getVz() const {
         return getV() * cos(theta);
     }
+
+    double getDeltaX(double B) const {
+        return getVx()/getOmege(B);
+    }
+
+    double getDeltaY(double B) const {
+        return getVy() /getOmege(B);
+    };
 
 };
 

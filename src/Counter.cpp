@@ -205,6 +205,10 @@ void Counter::printStartInfo() const
         os << "# \t\t\trho=" << injector.rho << "\n";
         os << "# \t\t\tz=" << injector.z << "\n";
         os << "# \t\t\tphi=" << injector.phi*180./M_PI << "\n";
+        os << "# \t\tparticle\n";
+        os << "# \t\t\tE=" << injector.E << "\n";
+        os << "# \t\t\tZ=" << injector.Z << "\n";
+        os << "# \t\t\tM=" << injector.M << "\n";
         os << "# \tinjector end\n";
     }
 
