@@ -321,7 +321,7 @@ class Draw:
         ax1 = axes
 
         for ir in range(self.nr):
-            for iz in range(self.nr):
+            for iz in range(self.nz):
                 for iphi in range(self.nphi):
                     nf[ir+1] += self.nCapture[self.__getIndex(iz, ir, iphi)] / self.__volume(iz, ir, iphi)
 
