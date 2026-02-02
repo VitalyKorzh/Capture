@@ -27,12 +27,15 @@ class Injector:
     
     def getV(self):
         return np.sqrt(2.*self.E / self.M)
+    
+    def getVPerp(self):
+        return self.getV()*np.sin(self.theta)
 
     def getVx(self):
-        return -self.getV()*np.sin(self.theta)*np.sin(self.phi) 
+        return -self.getVPerp()*np.sin(self.phi) 
     
     def getVy(self):
-        return self.getV()*np.sin(self.theta)*np.cos(self.phi)
+        return self.getVPerp()*np.cos(self.phi)
     
     def getVz(self):
         return self.getV()*np.cos(self.theta)
@@ -109,7 +112,10 @@ class Draw:
             self.__readAxis(file, data, 'phi')
 
             while not 'count end' in line:
-                
+
+                if 'Bcenter' in line:
+                    self.Bcenter = float(line.split("=")[-1])
+                    print('Bcenter =', self.Bcenter)
                 if 'injector' in line and not 'injector end' in line:
 
                     line = file.readline()
@@ -189,7 +195,7 @@ class Draw:
         return data
 
     def __drawLine(self, ax, rho : float, phi : float, theta : float, z0 : float, 
-                 Rmax : float):
+                 Rmax : float, injector = None):
 
         t = np.sqrt(Rmax*Rmax - rho*rho) / np.sin(theta)
 
@@ -202,6 +208,13 @@ class Draw:
 
         ax.plot3D([z0 - 1.5*t*sz, z0 + t*sz], [x0 - 1.5*t * sx, x0 + t*sx], [y0 - 1.5*t * sy, y0 + t*sy], 
                   self.linestyleInjector, linewidth=self.linewidthInjector, color=self.colorInjector)
+        
+        if not injector == None:
+            ax.plot3D([z0 - 1.5*t*sz, z0 + t*sz], [x0 - 1.5*t * sx + injector.getVy()/injector.Omega(self.Bcenter), x0 + t*sx 
+                                                   + injector.getVy()/injector.Omega(self.Bcenter)], [y0 - 1.5*t * sy - injector.getVx()/injector.Omega(self.Bcenter), 
+                                                                                                      y0 + t*sy -injector.getVx()/injector.Omega(self.Bcenter)], 
+                  '--', linewidth=self.linewidthInjector, color=self.colorInjector)
+
         if self.drawPoints:
             ax.scatter3D([z0-t*sz, z0+t*sz], [x0-t*sx, x0+t*sx], [y0-t*sy, y0+t*sy], s=self.pointInjectorSize, color=self.colorInjector)
         
@@ -295,7 +308,7 @@ class Draw:
             r0 = injector.r0
 
             if (self.drawInjectorLine):
-                self.__drawLine(ax, rho, phi, theta, z0, self.rArray[-1]) # рисуем линию инжекции
+                self.__drawLine(ax, rho, phi, theta, z0, self.rArray[-1], injector) # рисуем линию инжекции
             if (self.drawCircleRho and not rho in listRho and rho != 0.):
                 self.__drawCircle(ax, 0, 0, z0, rho, linestyle="--", linewidth=1) # рисуем окружность радиусом rho
                 listRho.append(rho)
@@ -444,4 +457,4 @@ if __name__ == '__main__':
 
     draw = Draw(fileName, drawNotInter=False)
 
-    draw.show()
+    draw.show(drawCapFromR=False, drawFromLine=False)

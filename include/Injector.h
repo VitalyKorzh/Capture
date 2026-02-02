@@ -32,12 +32,16 @@ struct Injector
         return sqrt(2.*E*PhysicValues::EV_TO_ERG / (M*PhysicValues::MP));
     }
 
+    double  getVperp() const {
+        return getV()*sin(theta);
+    }
+
     double getVx() const {
-        return -getV() * sin(theta) * sin(phi);
+        return -getVperp() * sin(phi);
     }
 
     double getVy() const {
-        return getV()*sin(theta) * cos(phi);
+        return getVperp() * cos(phi);
     }
 
     double getVz() const {

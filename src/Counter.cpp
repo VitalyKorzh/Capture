@@ -194,6 +194,7 @@ void Counter::printStartInfo() const
 
     os << "# count\n";
     os << "# \tt-epsilon=" << reader.t_epsilon << "\n";
+    os << "# \tBcenter=" << reader.Bcenter << "\n";
     for (Injector injector : injectors)
     {
         os << "# \tinjector\n";
