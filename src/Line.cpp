@@ -177,6 +177,7 @@ LineData Line::traceLine(uint nz, uint nr, uint nphi, const darray &zArray, cons
         else if ((t - tPrevious <= t_epsilon && t >= tPrevious) && findBoundary)
         {
             getNewIndex(boundary, iZ, iR, iPhi);
+            s += (t-tPrevious);
             tPrevious = t;
         }
     }

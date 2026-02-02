@@ -18,6 +18,23 @@ class Injector:
 
 class Draw:
 
+    def __volume(self, iz, ir, iphi):
+        
+        phi1 = self.phiArray[iphi]
+        phi2 = self.phiArray[iphi+1]
+
+        dphi = phi2 - phi1
+
+        z1 = self.zArray[iz]
+        z2 = self.zArray[iz+1]
+
+        r1 = self.rArray[ir]
+        r2 = self.rArray[ir+1]
+
+        V = dphi * (z2-z1) * (r2*r2 - r1*r1) / 2.
+
+        return V
+
     def __getIndex(self, iz, ir, iphi):
         return ir + self.nr*iz + self.nz*self.nr*iphi    
     
@@ -281,7 +298,7 @@ class Draw:
 
             for i in range(ns):
                 x[i+1] = sarray[1+i]
-                y[i+1] = sarray[1+i+1*ns]*self.normaN
+                y[i+1] = sarray[1+i+1*ns]*self.normaN / 1e13
                 z[i+1] = sarray[1+i+2*ns] / (sarray[1+i] - sarray[i])
                 
                 sumY += sarray[1+i+2*ns]
@@ -293,12 +310,26 @@ class Draw:
             ax1.set(xlabel='s, см', ylabel='ncap, см^-1')
             ax2.step(x, y)
             ax2.grid()
-            ax2.set(xlabel='s, см', ylabel='ni, см^-3')
+            ax2.set(xlabel='s, см', ylabel='ni, 10^13 см^-3')
             print("sum, ", sumY)
 
 
     def drawCapFromR(self):
-        pass
+        fig, axes = plt.subplots(nrows=1, ncols=1)
+        r = self.rArray
+        nf = np.zeros(self.nr+1)
+        ax1 = axes
+
+        for ir in range(self.nr):
+            for iz in range(self.nr):
+                for iphi in range(self.nphi):
+                    nf[ir+1] += self.nCapture[self.__getIndex(iz, ir, iphi)] / self.__volume(iz, ir, iphi)
+
+
+        nf[0] = nf[1]
+        ax1.step(r, nf)
+        ax1.grid()
+        ax1.set(xlabel='r, см', ylabel='nf, отн.ед.')
 
     def __init__(self, fileName, 
                  drawMesh=True, drawInjectorLine=True, drawInjectorCircle=True, 
@@ -354,12 +385,15 @@ class Draw:
         self.linewidthMesh = linewidthMesh
         self.linewidthInter = linewidthIner
 
-    def show(self, draw3d=False, drawFromLine=True):
+    def show(self, draw3d=False, drawFromLine=True, drawCapFromR=True):
 
         if draw3d:
             self.draw3D()
         if drawFromLine:
             self.drawCapFromLine()
+        if drawCapFromR:
+            self.drawCapFromR()
+        
         
         plt.show()
 
