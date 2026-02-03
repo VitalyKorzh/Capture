@@ -47,6 +47,21 @@ private:
         Boundary(double t_boundary, IntersectionType type, IntersectionDirection direction, uint index) : 
                         t_boundary(t_boundary), type(type), direction(direction), index(index) {}
 
+
+        bool operator != (const Boundary& boundary) const { return this->type != boundary.type || this->direction == boundary.direction; }
+
+    Boundary& operator=(const Boundary& boundary)
+    {
+        if(&boundary != this)
+        {
+            this->t_boundary = boundary.t_boundary;
+            this->type = boundary.type;
+            this->direction = boundary.direction;
+            this->index = boundary.index;
+        }
+        return *this;
+    }
+
     };
 
     const double rho; // прицельный параметер
