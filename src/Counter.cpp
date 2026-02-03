@@ -99,7 +99,7 @@ void Counter::printSArray(const darray &sArray, uint i) const
         << " " << sArray[i+1+ns] <<
         " " << sArray[i+1+2*ns] / full << "\n";
     }
-    os << "#\n";
+    os << "#" << std::endl;
 }
 
 void Counter::count()
@@ -214,7 +214,7 @@ void Counter::printStartInfo() const
     }
 
     os << "# count end\n";
-    os << "#\n";
+    os << "#" << std::endl;
 }
 
 void Counter::printResult() const
