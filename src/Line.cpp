@@ -121,15 +121,26 @@ void Line::getNewIndex(const Boundary &boundary, uint &iZ, uint &iR, uint &iPhi)
 
 }
 
-LineData Line::traceLine(uint nz, uint nr, uint nphi, const darray &zArray, const darray &rArray, const darray &phiArray, double &tPrevious, 
-                            uint &iZ, uint &iR, uint &iPhi, Boundary &bPrevious)
+bool Line::checkBoundary(const std::vector<Boundary> &boundaryArray, const Boundary &boundary, uint index) const
+{
+    for (uint ii = index; ii < boundaryArray.size(); ii++)
+    {
+        if (boundary == boundaryArray[ii])
+            return true;
+    }
+
+    return false;
+}
+
+LineData Line::traceLine(uint nz, uint nr, uint nphi, const darray &zArray, const darray &rArray, const darray &phiArray, double &tPrevious,
+                         uint &iZ, uint &iR, uint &iPhi, std::vector<Boundary> &bPrevious)
 {
 
-    double x_current = x00 + tPrevious * sx;
-    double y_current = y00 + tPrevious * sy;
+    // double x_current = x00 + tPrevious * sx;
+    // double y_current = y00 + tPrevious * sy;
 
-    double z_current = z00 + tPrevious * sz;
-    double r_current = getRPoint(tPrevious);
+    // double z_current = z00 + tPrevious * sz;
+    // double r_current = getRPoint(tPrevious);
     double phi_current = getPhiPoint(tPrevious);
 
     double s = 0;
@@ -165,27 +176,39 @@ LineData Line::traceLine(uint nz, uint nr, uint nphi, const darray &zArray, cons
     );
 
     bool findBoundary = false;
+
+    uint index_boundaries = 0;
+
     for (Boundary boundary : boundaries)
     {
         double t = boundary.t_boundary;
-        if (t > tPrevious && !findBoundary  && boundary != bPrevious)
-        {
-            s = (t - tPrevious);
-            tPrevious = t;
-            findBoundary = true;
-            getNewIndex(boundary, iZ, iR, iPhi);
 
-            bPrevious = boundary;
-        }
-        else if ((t - tPrevious <= t_epsilon && t >= tPrevious) && findBoundary)
+        if (t >= tPrevious && !checkBoundary(bPrevious, boundary, index_boundaries))
         {
-            getNewIndex(boundary, iZ, iR, iPhi);
-            s += (t-tPrevious);
-            tPrevious = t;
-            
-            bPrevious = boundary;
+            if (t > tPrevious && !findBoundary)
+            {
+                s = (t - tPrevious);
+                tPrevious = t;
+                findBoundary = true;
+                getNewIndex(boundary, iZ, iR, iPhi);
+    
+                bPrevious[index_boundaries] = boundary;
+                index_boundaries++;
+            }
+            else if ((t - tPrevious) <= t_epsilon && findBoundary)
+            {
+                getNewIndex(boundary, iZ, iR, iPhi);
+                s += (t-tPrevious);
+                tPrevious = t;
+                
+                bPrevious[index_boundaries] = boundary;
+                index_boundaries++;
+            }
         }
     }
+
+    for (uint ii = index_boundaries; ii < bPrevious.size(); ii++)
+        bPrevious[ii].type = Boundary::IntersectionType::None;
 
     LineData data(iZprev, iRprev, iPhiprev, s);
 
@@ -197,7 +220,6 @@ LineData Line::traceLine(uint nz, uint nr, uint nphi, const darray &zArray, cons
         for (uint iphi = 0; iphi < nphi; iphi++)
            if (phi_new >= phiArray[iphi] && phi_new < phiArray[iphi+1])
                iPhi = iphi;
-        //iPhi = (nphi/2 + iPhiprev) % nphi;
     }
     else
         crossAxis = false;
@@ -232,14 +254,13 @@ bool Line::createDataArray(uint nz, uint nr, uint nphi,
     }
 
     ns = 0;
-    Boundary boundary(0, Boundary::IntersectionType::None, Boundary::IntersectionDirection::MIN, 0);
 
-    //const uint N_PREV_BOUNDARIES = 3;
-    //std::vector <Boundary> previousBoundaries(N_PREV_BOUNDARIES, Boundary(0, Boundary::IntersectionType::None, Boundary::IntersectionDirection::MIN, 0));
+    const uint N_PREV_BOUNDARIES = 4;
+    std::vector <Boundary> previousBoundaries(N_PREV_BOUNDARIES, Boundary());
 
     while (iZ != nz && iR != nr) {
         //std::cout << "iz: " << iZ << " ir: " << iR << " iphi: " << iPhi << "\n";
-        data.push_back(traceLine(nz, nr, nphi, zArray, rArray, phiArray, tPrevious, iZ, iR, iPhi, boundary));
+        data.push_back(traceLine(nz, nr, nphi, zArray, rArray, phiArray, tPrevious, iZ, iR, iPhi, previousBoundaries));
         ns++;
         if (ns > nr*nz*nphi)
             return false;
