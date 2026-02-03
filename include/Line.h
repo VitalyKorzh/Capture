@@ -30,15 +30,22 @@ private:
         enum class IntersectionType {
             R,
             Z,
-            Phi
+            Phi,
+            None
+        };
+
+        enum class IntersectionDirection {
+            MIN,
+            MAX
         };
 
         double t_boundary;
         IntersectionType type;
+        IntersectionDirection direction;
         uint index;
 
-        Boundary(double t_boundary, IntersectionType type, uint index) : 
-                        t_boundary(t_boundary), type(type), index(index) {}
+        Boundary(double t_boundary, IntersectionType type, IntersectionDirection direction, uint index) : 
+                        t_boundary(t_boundary), type(type), direction(direction), index(index) {}
 
     };
 
@@ -96,7 +103,7 @@ private:
 
     LineData traceLine(uint nz, uint nr, uint nphi, const darray &zArray, 
                         const darray &rArray, const darray &phiArray, 
-                        double &tPrevious, uint &iZ, uint &iR, uint &iPhi); // сместить луч на одну позицию
+                        double &tPrevious, uint &iZ, uint &iR, uint &iPhi, Boundary &bPrevious); // сместить луч на одну позицию
 
 
     bool createDataArray(uint nz, uint nr, uint nphi, const darray &zArray, 

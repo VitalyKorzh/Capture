@@ -121,7 +121,8 @@ void Line::getNewIndex(const Boundary &boundary, uint &iZ, uint &iR, uint &iPhi)
 
 }
 
-LineData Line::traceLine(uint nz, uint nr, uint nphi, const darray &zArray, const darray &rArray, const darray &phiArray, double &tPrevious, uint &iZ, uint &iR, uint &iPhi)
+LineData Line::traceLine(uint nz, uint nr, uint nphi, const darray &zArray, const darray &rArray, const darray &phiArray, double &tPrevious, 
+                            uint &iZ, uint &iR, uint &iPhi, Boundary &bPrevious)
 {
 
     double x_current = x00 + tPrevious * sx;
@@ -149,12 +150,12 @@ LineData Line::traceLine(uint nz, uint nr, uint nphi, const darray &zArray, cons
 
     std::vector<Boundary> boundaries= 
     {
-        Boundary(getTZ(z1), Boundary::IntersectionType::Z, iZ > 0 ? iZ-1 : nz),
-        Boundary(getTZ(z2), Boundary::IntersectionType::Z, iZ+1),
-        Boundary(t_r1, Boundary::IntersectionType::R, iR > 0 ? iR-1: nr+1),
-        Boundary(t_r2, Boundary::IntersectionType::R, iR+1),
-        Boundary(getTPhi(phi1), Boundary::IntersectionType::Phi, iPhi > 0 ? (iPhi-1) % nphi : nphi-1),
-        Boundary(getTPhi(phi2), Boundary::IntersectionType::Phi, (iPhi+1) % nphi )
+        Boundary(getTZ(z1), Boundary::IntersectionType::Z, Boundary::IntersectionDirection::MIN, iZ > 0 ? iZ-1 : nz),
+        Boundary(getTZ(z2), Boundary::IntersectionType::Z, Boundary::IntersectionDirection::MAX, iZ+1),
+        Boundary(t_r1, Boundary::IntersectionType::R, Boundary::IntersectionDirection::MIN, iR > 0 ? iR-1: nr+1),
+        Boundary(t_r2, Boundary::IntersectionType::R, Boundary::IntersectionDirection::MAX, iR+1),
+        Boundary(getTPhi(phi1), Boundary::IntersectionType::Phi, Boundary::IntersectionDirection::MIN, iPhi > 0 ? (iPhi-1) % nphi : nphi-1),
+        Boundary(getTPhi(phi2), Boundary::IntersectionType::Phi, Boundary::IntersectionDirection::MAX, (iPhi+1) % nphi )
     };
 
     std::sort(boundaries.begin(), boundaries.end(), [](Boundary a, Boundary b) 
@@ -167,18 +168,26 @@ LineData Line::traceLine(uint nz, uint nr, uint nphi, const darray &zArray, cons
     for (Boundary boundary : boundaries)
     {
         double t = boundary.t_boundary;
-        if (t > tPrevious && !findBoundary)
+        if (t > tPrevious && !findBoundary  && (boundary.type != bPrevious.type || boundary.direction == bPrevious.direction) )
         {
             s = (t - tPrevious);
             tPrevious = t;
             findBoundary = true;
             getNewIndex(boundary, iZ, iR, iPhi);
+
+            bPrevious.t_boundary = t;
+            bPrevious.direction = boundary.direction;
+            bPrevious.type = boundary.type;
         }
         else if ((t - tPrevious <= t_epsilon && t >= tPrevious) && findBoundary)
         {
             getNewIndex(boundary, iZ, iR, iPhi);
             s += (t-tPrevious);
             tPrevious = t;
+
+            bPrevious.t_boundary = t;
+            bPrevious.direction = boundary.direction;
+            bPrevious.type = boundary.type;
         }
     }
 
@@ -227,10 +236,10 @@ bool Line::createDataArray(uint nz, uint nr, uint nphi,
     }
 
     ns = 0;
-
+    Boundary boundary(0, Boundary::IntersectionType::None, Boundary::IntersectionDirection::MIN, 0);
     while (iZ != nz && iR != nr) {
         //std::cout << "iz: " << iZ << " ir: " << iR << " iphi: " << iPhi << "\n";
-        data.push_back(traceLine(nz, nr, nphi, zArray, rArray, phiArray, tPrevious, iZ, iR, iPhi));
+        data.push_back(traceLine(nz, nr, nphi, zArray, rArray, phiArray, tPrevious, iZ, iR, iPhi, boundary));
         ns++;
         if (ns > nr*nz*nphi)
             return false;
