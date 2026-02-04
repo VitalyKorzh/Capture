@@ -32,6 +32,8 @@ private:
     uiarray nCap;
     uint nFlyby;
 
+    uiarray ncapAxial;
+
     void clearPrevious();
 
     uint getIndex(uint iz, uint ir, uint iphi) const { return ir + nr*iz + nr*nz*iphi; }
@@ -41,6 +43,9 @@ private:
     darray fillSArray(const Line &line) const; 
     void printSArray(const darray &sArray, uint i) const;
 
+    double cellVolume(uint iz, uint ir, uint iphi) const;
+    
+    uiarray convertToAxialSymmetry() const;
 public:
     Counter(std::istream &in=std::cin, std::ostream &os=std::cout);
     void count();

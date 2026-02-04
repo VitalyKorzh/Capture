@@ -460,6 +460,8 @@ class Draw:
         self.linewidthMesh = linewidthMesh
         self.linewidthInter = linewidthIner
 
+        
+
     def show(self, draw3d=True, drawFromLine=True, drawCapFromR=True):
 
         if draw3d:
@@ -479,4 +481,4 @@ if __name__ == '__main__':
 
     draw = Draw(fileName, drawNotInter=False)
 
-    draw.show(drawCapFromR=False, drawFromLine=False)
+    draw.show(drawCapFromR=False, drawFromLine=True, draw3d=False)

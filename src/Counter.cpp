@@ -97,6 +97,54 @@ void Counter::printSArray(const darray &sArray, uint i) const
     os << "#" << std::endl;
 }
 
+double Counter::cellVolume(uint iz, uint ir, uint iphi) const
+{
+    double r1 = rArray[ir];
+    double r2 = rArray[ir+1];
+
+    double z1 = zArray[iz];
+    double z2 = zArray[iz+1];
+
+    double phi1 = phiArray[iphi];
+    double phi2 = phiArray[iphi+1];
+
+    return (phi2-phi1)*(r2-r1)*(z2-z1)*(r1+r2)/2.;
+}
+
+uiarray Counter::convertToAxialSymmetry() const
+{
+    uiarray ncapAxial(nr*nz, 0);
+
+    // for (uint iphi0=0; iphi0 < nphi; iphi0++)
+    // {
+    //     for (uint iphi=0; iphi < nphi; iphi++)
+    //     {
+    //         for (uint iz=0; iz < nz; iz++)
+    //         {
+    //             for (uint ir=0; ir < nr; ir++)
+    //             {
+    //                 ncapAxial[getIndex(iz, ir, iphi)] += nCap[getIndex(iz, ir, (iphi+iphi0) % nphi )];
+    //             }
+    //         }
+    //     }
+    // }
+
+    for (uint iz=0; iz < nz; iz++)
+    {
+        for (uint ir=0; ir < nr; ir++)
+        {
+            double sumPhi = 0;
+            for (uint iphi=0; iphi < nphi; iphi++)
+            {
+                sumPhi += nCap[getIndex(iz, ir, iphi)];
+            }
+            ncapAxial[getIndex(iz, ir, 0)] = sumPhi;
+        }
+    }
+
+    return ncapAxial;
+}
+
 void Counter::count()
 {
     TimeProfiler t_cout("time count full");
@@ -238,6 +286,9 @@ void Counter::printResult() const
         }
     }
 }
+
+
+
 
 Counter::~Counter()
 {
