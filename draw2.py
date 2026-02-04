@@ -106,7 +106,8 @@ class Draw:
             'injectors' : [],
             'intersection' : [],
             'ncapture' : [],
-            'sarray' : []
+            'sarray' : [],
+            'nF' : [],
         }
 
         with open(filename, 'r') as file:
@@ -121,11 +122,12 @@ class Draw:
             self.__readAxis(file, data, 'r')
             self.__readAxis(file, data, 'phi')
 
+            nInjector=0
+
             while not 'count end' in line:
 
                 if 'Bcenter' in line:
                     self.Bcenter = float(line.split("=")[-1])
-                    print('Bcenter =', self.Bcenter)
                 if 'injector' in line and not 'injector end' in line:
 
                     line = file.readline()
@@ -164,7 +166,8 @@ class Draw:
                         sign = -1
 
                     rmax = data['rAxis'][-1]
-                    print("injection l:", 2.*np.sqrt(rmax*rmax-rho*rho) / np.sin(theta))
+                    print("injection %d l: %f" %(nInjector, 2.*np.sqrt(rmax*rmax-rho*rho) / np.sin(theta)))
+                    nInjector+=1
 
                     data['injectors'].append(Injector(rho, phi, z0, theta, r0, E, Z, M, sign))
 
@@ -182,7 +185,6 @@ class Draw:
                 if 'result injector' in line:
                     line = file.readline()
                     ns = int(line.split("=")[-1])
-                    print("ns:", ns)
                     data['sarray'].append(np.zeros(3*ns+1))
 
                     for i in range(ns):
@@ -192,8 +194,7 @@ class Draw:
                         data['sarray'][-1][1+i+ns] = value[2]
                         data['sarray'][-1][1+i+2*ns] = value[3]
 
-            ncap = float( line.split(("="))[-1].split("%")[0] )
-            print("ncap =", ncap, '%')
+            self.ncap = float( line.split(("="))[-1].split("%")[0] )
 
             for iphi in range(nphi):
                 line = file.readline()
@@ -207,7 +208,18 @@ class Draw:
                         data['ncapture'].append(float(values[2*ir]))
                         if values[2*ir+1]:
                             print("iz:", iz, "ir:", ir, "iphi:", iphi)
-                    
+            
+
+            while not 'n from r:' in line:
+                line = file.readline()
+
+            data['nF'].append(0)
+            for ir in range(nr):
+                line = file.readline()
+                data['nF'].append(float(line))
+            data['nF'][0] = data['nF'][1]
+
+
 
 
         return data
@@ -373,36 +385,32 @@ class Draw:
             y[0] = y[1]
             z[0] = z[1]
             ax1.step(x, z)
-            ax1.grid()
-            ax1.set(xlabel='s, см', ylabel='ncap, см^-1')
             ax2.step(x, y)
-            ax2.grid()
-            ax2.set(xlabel='s, см', ylabel='ni, 10^13 см^-3')
-            print("sum ncap_s: ", sumY)
-
+        ax1.grid()
+        ax1.set(xlabel='s, см', ylabel='ncap, см^-1')
+        ax2.grid()
+        ax2.set(xlabel='s, см', ylabel='ni, 10^13 см^-3')
 
     def drawCapFromR(self):
         fig, axes = plt.subplots(nrows=1, ncols=1)
         r = self.rArray
-        nf = np.zeros(self.nr+1)
+        nf = self.nF
         ax1 = axes
 
-        for ir in range(self.nr):
-            for iz in range(self.nz):
-                z1 = self.zArray[iz]
-                z2 = self.zArray[iz+1]
-                for iphi in range(self.nphi):
-                    phi1 = self.phiArray[iphi]
-                    phi2 = self.phiArray[iphi+1]
-                    nf[ir+1] += (self.nCapture[self.__getIndex(iz, ir, iphi)] / self.__volume(iz, ir, iphi) *
-                                (z2 - z1) * (phi2 - phi1) / (2.*np.pi*(self.zArray[-1]-self.zArray[0])))
+        # for ir in range(self.nr):
+        #     for iz in range(self.nz):
+        #         z1 = self.zArray[iz]
+        #         z2 = self.zArray[iz+1]
+        #         for iphi in range(self.nphi):
+        #             phi1 = self.phiArray[iphi]
+        #             phi2 = self.phiArray[iphi+1]
+        #             nf[ir+1] += (self.nCapture[self.__getIndex(iz, ir, iphi)] / self.__volume(iz, ir, iphi) *
+        #                         (z2 - z1) * (phi2 - phi1) / (2.*np.pi*(self.zArray[-1]-self.zArray[0])))
                                 
-
-
         nf[0] = nf[1]
         ax1.step(r, nf)
         ax1.grid()
-        ax1.set(xlabel='r, см', ylabel='nf, отн.ед.')
+        ax1.set(xlabel='r, см', ylabel='nf, см^-3')
 
     def __init__(self, fileName, 
                  drawMesh=True, drawInjectorLine=True, drawInjectorCircle=True, 
@@ -422,6 +430,7 @@ class Draw:
         self.injectors = data['injectors']
         self.intersection = data['intersection']
         self.sarray = data['sarray']
+        self.nF = data['nF']
         self.nz = len(self.zArray) - 1
         self.nr = len(self.rArray) - 1
         self.nphi = len(self.phiArray) - 1
@@ -466,6 +475,8 @@ class Draw:
         self.linewidthMesh = linewidthMesh
         self.linewidthInter = linewidthIner
         self.drawLarmorCenterLine = drawLarmorCenterLine
+
+        print("\nncap =", self.ncap, '%')
 
         
 

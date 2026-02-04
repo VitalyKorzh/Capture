@@ -111,7 +111,28 @@ double Counter::cellVolume(uint iz, uint ir, uint iphi) const
     return (phi2-phi1)*(r2-r1)*(z2-z1)*(r1+r2)/2.;
 }
 
-uiarray Counter::convertToAxialSymmetry() const
+void Counter::countIonN()
+{
+    nF.resize(nr, 0.);
+
+    for (uint ir = 0; ir < nr; ir++)
+    {
+        double r1 = rArray[ir];
+        double r2 = rArray[ir+1];
+        uint Nions = 0;
+        double volume = M_PI*(zArray.back()-zArray.front())*(r2*r2-r1*r1);
+
+        for (uint iphi = 0; iphi < nphi; iphi++) {
+            for (uint iz = 0; iz < nz; iz++)
+                Nions += nCap[getIndex(iz, ir, iphi)];
+        }
+
+        nF[ir] = Nions / (volume * (nParticles-nFlyby));
+    }
+
+}
+
+/*uiarray Counter::convertToAxialSymmetry() const
 {
     uiarray ncapAxial(nr*nz, 0);
 
@@ -143,7 +164,7 @@ uiarray Counter::convertToAxialSymmetry() const
     }
 
     return ncapAxial;
-}
+}*/
 
 void Counter::count()
 {
@@ -211,6 +232,8 @@ void Counter::count()
         nParticles += injector.particles;
         index++;
     }
+
+    countIonN();
 }
 
 void Counter::printStartInfo() const 
@@ -260,7 +283,7 @@ void Counter::printStartInfo() const
             os << "# \t\t[plus-direction]\n";
         else
             os << "# \t\t[minus-direction]\n";
-        os << "# \tinjector end\n";
+        os << "# \tinjector end\n#\n";
     }
 
     os << "# count end\n";
@@ -285,10 +308,13 @@ void Counter::printResult() const
             os << "\n";
         }
     }
+
+    os << "#\n";
+    os << "#n from r:\n";
+    for (uint ir = 0; ir < nr; ir++)
+        os << nF[ir] << "\n";
+    os << "\n";
 }
-
-
-
 
 Counter::~Counter()
 {

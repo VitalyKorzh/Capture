@@ -5,7 +5,7 @@ project(capture)
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_BUILD_TYPE Debug)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pthread")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pthread -O3")
 
 file(GLOB SRC src/*.cpp)
 
