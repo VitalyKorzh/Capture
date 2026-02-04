@@ -133,6 +133,7 @@ private:
 
 
     bool checkBoundary(const std::vector <Boundary> &boundaryArray, const Boundary & boundary, uint index=0) const;
+    bool checkBoundaryR(const std::vector <Boundary> &boundaryArray, Boundary::IntersectionDirection direction, uint index=0) const;
 
     LineData traceLine(uint nz, uint nr, uint nphi, const darray &zArray, 
                         const darray &rArray, const darray &phiArray, 

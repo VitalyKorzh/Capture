@@ -142,6 +142,16 @@ bool Line::checkBoundary(const std::vector<Boundary> &boundaryArray, const Bound
     return false;
 }
 
+bool Line::checkBoundaryR(const std::vector<Boundary> &boundaryArray, Boundary::IntersectionDirection direction, uint index) const
+{
+    for (uint ii = index; ii < boundaryArray.size(); ii++)
+    {
+        if (boundaryArray[ii].type == Boundary::IntersectionType::R && boundaryArray[ii].direction == direction)
+            return true;
+    }
+    return false;
+}
+
 LineData Line::traceLine(uint nz, uint nr, uint nphi, const darray &zArray, const darray &rArray, const darray &phiArray, double &tPrevious,
                          uint &iZ, uint &iR, uint &iPhi, std::vector<Boundary> &bPrevious)
 {
@@ -149,8 +159,8 @@ LineData Line::traceLine(uint nz, uint nr, uint nphi, const darray &zArray, cons
     // double x_current = x00 + tPrevious * sx;
     // double y_current = y00 + tPrevious * sy;
 
-    // double z_current = z00 + tPrevious * sz;
-    // double r_current = getRPoint(tPrevious);
+    double z_current = z00 + tPrevious * sz;
+    double r_current = getRPoint(tPrevious);
     double phi_current = getPhiPoint(tPrevious);
 
     double s = 0;
@@ -179,6 +189,9 @@ LineData Line::traceLine(uint nz, uint nr, uint nphi, const darray &zArray, cons
         Boundary(getTPhi(phi2), Boundary::IntersectionType::Phi, Boundary::IntersectionDirection::MAX, (iPhi+1) % nphi )
     };
 
+    if (t_r1 < 0. && std::abs(tPrevious - t_crit) <= t_epsilon_first && checkBoundaryR(bPrevious, Boundary::IntersectionDirection::MIN))
+      iR++;
+    
     std::sort(boundaries.begin(), boundaries.end(), [](Boundary a, Boundary b) 
         {
             return a.t_boundary < b.t_boundary;

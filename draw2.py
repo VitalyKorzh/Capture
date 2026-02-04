@@ -220,18 +220,16 @@ class Draw:
         x0 = rho*np.cos(phi)
         y0 = rho*np.sin(phi)
 
-        sx = -np.sin(theta)*np.sin(phi)
-        sy = np.sin(theta)*np.cos(phi)
+        sx = -np.sin(theta)*np.sin(phi)*sign
+        sy = np.sin(theta)*np.cos(phi)*sign
         sz = np.cos(theta)
-
-
-        deltaX = injector.getDeltaX()
-        deltaY = injector.getDeltaY()
 
         ax.plot3D([z0 - 1.5*t*sz, z0 + t*sz], [x0 - 1.5*t * sx, x0 + t*sx], [y0 - 1.5*t * sy, y0 + t*sy], 
                   self.linestyleInjector, linewidth=self.linewidthInjector, color=self.colorInjector)
         
-        if not injector == None:
+        if not injector == None and self.drawLarmorCenterLine:
+            deltaX = injector.getDeltaX(self.Bcenter)
+            deltaY = injector.getDeltaY(self.Bcenter)
             ax.plot3D([z0 - 1.5*t*sz, z0 + t*sz], [x0 - 1.5*t * sx + deltaX, x0 + t*sx 
                                                    + deltaX], [y0 - 1.5*t * sy + deltaY, y0 + t*sy + deltaY], 
                   '--', linewidth=self.linewidthInjector, color=self.colorInjector)
@@ -267,7 +265,7 @@ class Draw:
         phi0 = np.linspace(0, np.pi*2, self.Npoints)
         ax.plot3D(np.ones(self.Npoints)*z0, rho*np.cos(phi)+r0*np.cos(phi0), rho*np.sin(phi) + r0*np.sin(phi0), linestyle, color=self.colorInjector, linewidth=linewidth)
 
-    def __drawMesh(self, ax):
+    def __drawMesh(self, ax, value):
 
         for iphi in range(self.nphi):
             for iz in range(self.nz):
@@ -286,7 +284,7 @@ class Draw:
 
                     if self.intersection[self.__getIndex(iz, ir, iphi)]:
                         linewidth = self.linewidthInter
-                        color = self.__getColor(self.nCapture[self.__getIndex(iz, ir, iphi)], 0, max(self.nCapture))
+                        color = self.__getColor(value[self.__getIndex(iz, ir, iphi)], 0, max(value))
                     elif not self.drawNotInter:
                         continue
 
@@ -317,7 +315,7 @@ class Draw:
 
         if (self.drawMesh):
             pass
-            self.__drawMesh(ax)
+            self.__drawMesh(ax, self.concetration)
 
         listRho = []
         for injector in self.injectors:
@@ -413,7 +411,7 @@ class Draw:
                  linestyleInjector='-', drawQuiver=True, drawPoints=True,
                  linewidthInjector=2, colorAxis='black', linewidthAxis=2, 
                  linestyleAxis='--', pointInjectorSize=40, drawSurfeCircle=True,
-                 colorMesh='black', linewidthMesh=0.5, linewidthIner=1
+                 colorMesh='black', linewidthMesh=0.5, linewidthIner=1, drawLarmorCenterLine=True
                  ):
         
         data = self.__readFileOut(fileName)
@@ -432,6 +430,14 @@ class Draw:
             self.intersection.append(False)
         while len(self.nCapture) < self.nr*self.nz*self.nphi:
             self.nCapture.append(0.)
+
+
+        self.concetration = np.zeros(self.nphi*self.nz*self.nr)
+
+        for iphi in range(self.nphi):
+            for iz in range(self.nz):
+                for ir in range(self.nr):
+                    self.concetration[self.__getIndex(iz, ir, iphi)] = self.nCapture[self.__getIndex(iz, ir, iphi)] / self.__volume(iz, ir, iphi)
 
         self.drawMesh = drawMesh
         self.drawInjectorLine = drawInjectorLine
@@ -459,6 +465,7 @@ class Draw:
         self.colorMesh = colorMesh
         self.linewidthMesh = linewidthMesh
         self.linewidthInter = linewidthIner
+        self.drawLarmorCenterLine = drawLarmorCenterLine
 
         
 
@@ -479,6 +486,6 @@ if __name__ == '__main__':
 
     fileName = sys.argv[1]
 
-    draw = Draw(fileName, drawNotInter=False)
+    draw = Draw(fileName, drawNotInter=False, drawLarmorCenterLine=False)
 
-    draw.show(drawCapFromR=False, drawFromLine=True, draw3d=False)
+    draw.show(drawCapFromR=True, drawFromLine=True, draw3d=True)
