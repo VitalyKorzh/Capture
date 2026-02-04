@@ -233,7 +233,7 @@ class Draw:
         
         if not injector == None:
             ax.plot3D([z0 - 1.5*t*sz, z0 + t*sz], [x0 - 1.5*t * sx + deltaX, x0 + t*sx 
-                                                   + deltaX], [y0 - 1.5*t * sy - delyaY, y0 + t*sy - deltaY], 
+                                                   + deltaX], [y0 - 1.5*t * sy - deltaY, y0 + t*sy - deltaY], 
                   '--', linewidth=self.linewidthInjector, color=self.colorInjector)
 
         if self.drawPoints:
