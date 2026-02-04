@@ -18,11 +18,6 @@ void Counter::clearPrevious()
         intersectionCell[i] = false;
 }
 
-double Counter::rhoLarmor(double E, double theta, double phi, double B, double M, double Q) const
-{
-    return sqrt(2*E*M*PhysicValues::C*PhysicValues::C) / (Q*B) * sin(theta);
-}
-
 Counter::Counter(std::istream &in, std::ostream &os) : reader(in), os(os), nz(reader.nz), nr(reader.nr), nphi(reader.nphi),
                                                        ni(reader.ni), zArray(reader.zArray), rArray(reader.rArray),
                                                        phiArray(reader.phiArray), injectors(reader.injectors), nParticles(0), intersectionCell(nr * nz * nphi, false),
@@ -123,7 +118,8 @@ void Counter::count()
         darray sArray;
 
         if (r0 == 0) {
-            Line line(rho, injector.theta, phi,  injector.z, nz, nr, nphi, zArray, rArray,  phiArray, reader.t_epsilon);
+            Line line(rho, injector.theta, phi,  injector.z, nz, nr, nphi, zArray, rArray,  phiArray, reader.t_epsilon, reader.t_epsilon_first, 
+                        injector.plusDirection, injector.getRhoLarmor(reader.Bcenter));
 
             sArray = fillSArray(line);
 
@@ -153,7 +149,8 @@ void Counter::count()
 
                 if (phi_new < 0) phi_new += 2 * M_PI;
 
-                Line line(rho_new, injector.theta, phi_new,  injector.z, nz, nr, nphi, zArray, rArray,  phiArray, reader.t_epsilon);
+                Line line(rho_new, injector.theta, phi_new,  injector.z, nz, nr, nphi, zArray, rArray,  phiArray, reader.t_epsilon, reader.t_epsilon_first, 
+                                injector.plusDirection, injector.getRhoLarmor(reader.Bcenter));
                 if (line.getLineWork())
                     process(line, injector, distGamma(gen));
                 else {
@@ -194,6 +191,7 @@ void Counter::printStartInfo() const
 
     os << "# count\n";
     os << "# \tt-epsilon=" << reader.t_epsilon << "\n";
+    os << "# \tt-epsilon-first=" << reader.t_epsilon_first << "\n";
     os << "# \tBcenter=" << reader.Bcenter << "\n";
     for (Injector injector : injectors)
     {
@@ -210,6 +208,10 @@ void Counter::printStartInfo() const
         os << "# \t\t\tE=" << injector.E << "\n";
         os << "# \t\t\tZ=" << injector.Z << "\n";
         os << "# \t\t\tM=" << injector.M << "\n";
+        if (injector.plusDirection)
+            os << "# \t\t[plus-direction]\n";
+        else
+            os << "# \t\t[minus-direction]\n";
         os << "# \tinjector end\n";
     }
 

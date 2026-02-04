@@ -46,6 +46,7 @@ private:
     double normaDensity;
 
     double t_epsilon;
+    double t_epsilon_first;
 
     double Bcenter;
 

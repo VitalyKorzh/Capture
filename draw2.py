@@ -9,7 +9,7 @@ import sys
 
 class Injector:
 
-    def __init__(self, rho, phi, z0, theta, r0, E, Z, M):
+    def __init__(self, rho, phi, z0, theta, r0, E, Z, M, sign):
         self.rho = rho
         self.phi = phi
         self.z0 = z0
@@ -18,6 +18,7 @@ class Injector:
         self.E = E
         self.Z = Z
         self.M = M
+        self.sign = sign
 
         self.C = 3e10
 
@@ -32,13 +33,22 @@ class Injector:
         return self.getV()*np.sin(self.theta)
 
     def getVx(self):
-        return -self.getVPerp()*np.sin(self.phi) 
+        return -self.getVPerp()*np.sin(self.phi) * self.sign
     
     def getVy(self):
-        return self.getVPerp()*np.cos(self.phi)
+        return self.getVPerp()*np.cos(self.phi) * self.sign
     
     def getVz(self):
         return self.getV()*np.cos(self.theta)
+
+    def getRhoLarmor(self, B):
+        return self.getVPerp()/self.Omega(B)
+
+    def getDeltaX(self, B):
+        return self.getVy() / self.Omega(B)
+    
+    def getDeltaY(self, B):
+        return -self.getVx() / self.Omega(B)
 
 class Draw:
 
@@ -145,10 +155,18 @@ class Draw:
 
                     M = int(line.split('=')[-1])*1.67e-24
 
+
+                    line = file.readline()
+
+                    if '[plus-direction]' in line:
+                        sign = 1
+                    else:
+                        sign = -1
+
                     rmax = data['rAxis'][-1]
                     print("injection l:", 2.*np.sqrt(rmax*rmax-rho*rho) / np.sin(theta))
 
-                    data['injectors'].append(Injector(rho, phi, z0, theta, r0, E, Z, M))
+                    data['injectors'].append(Injector(rho, phi, z0, theta, r0, E, Z, M, sign))
 
 
                 line = file.readline()
@@ -195,7 +213,7 @@ class Draw:
         return data
 
     def __drawLine(self, ax, rho : float, phi : float, theta : float, z0 : float, 
-                 Rmax : float, injector = None):
+                 Rmax : float, sign : int, injector = None):
 
         t = np.sqrt(Rmax*Rmax - rho*rho) / np.sin(theta)
 
@@ -206,13 +224,16 @@ class Draw:
         sy = np.sin(theta)*np.cos(phi)
         sz = np.cos(theta)
 
+
+        deltaX = injector.getDeltaX()
+        deltaY = injector.getDeltaY()
+
         ax.plot3D([z0 - 1.5*t*sz, z0 + t*sz], [x0 - 1.5*t * sx, x0 + t*sx], [y0 - 1.5*t * sy, y0 + t*sy], 
                   self.linestyleInjector, linewidth=self.linewidthInjector, color=self.colorInjector)
         
         if not injector == None:
-            ax.plot3D([z0 - 1.5*t*sz, z0 + t*sz], [x0 - 1.5*t * sx + injector.getVy()/injector.Omega(self.Bcenter), x0 + t*sx 
-                                                   + injector.getVy()/injector.Omega(self.Bcenter)], [y0 - 1.5*t * sy - injector.getVx()/injector.Omega(self.Bcenter), 
-                                                                                                      y0 + t*sy -injector.getVx()/injector.Omega(self.Bcenter)], 
+            ax.plot3D([z0 - 1.5*t*sz, z0 + t*sz], [x0 - 1.5*t * sx + deltaX, x0 + t*sx 
+                                                   + deltaX], [y0 - 1.5*t * sy - delyaY, y0 + t*sy - deltaY], 
                   '--', linewidth=self.linewidthInjector, color=self.colorInjector)
 
         if self.drawPoints:
@@ -306,9 +327,10 @@ class Draw:
             theta = injector.theta
             z0 = injector.z0
             r0 = injector.r0
+            sign = injector.sign
 
             if (self.drawInjectorLine):
-                self.__drawLine(ax, rho, phi, theta, z0, self.rArray[-1], injector) # рисуем линию инжекции
+                self.__drawLine(ax, rho, phi, theta, z0, self.rArray[-1], sign, injector) # рисуем линию инжекции
             if (self.drawCircleRho and not rho in listRho and rho != 0.):
                 self.__drawCircle(ax, 0, 0, z0, rho, linestyle="--", linewidth=1) # рисуем окружность радиусом rho
                 listRho.append(rho)

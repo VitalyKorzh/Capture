@@ -19,6 +19,8 @@ bool InputReader::readInjector(std::istream &in)
     uint M = 1;
     double E = 0;
 
+    bool plusDirection = true;
+
     std::string line;
     if (!getline(in, line, true, true))
         return false;
@@ -29,6 +31,12 @@ bool InputReader::readInjector(std::istream &in)
         StringReader::getUnsignedParameter(line, "particles ", nParticles);
         StringReader::getDoubleParameter(line, "r0 ", r0);
         StringReader::getDoubleParameter(line, "sigma ", sigma);
+
+        if (line.find("minus-direction") != std::string::npos)
+            plusDirection = false;
+
+        if (line.find("plus-direction") != std::string::npos)
+            plusDirection = true;
 
         if (line.find("position") != std::string::npos)
         {
@@ -77,7 +85,7 @@ bool InputReader::readInjector(std::istream &in)
 
     theta *= M_PI / 180.;
 
-    injectors.push_back(Injector(rho, phi, z, sigma, r0, theta, nParticles, E, M, Z));
+    injectors.push_back(Injector(rho, phi, z, sigma, r0, theta, nParticles, E, M, Z, plusDirection));
 
     return true;
 }
@@ -93,6 +101,7 @@ InputReader::InputReader(std::istream &in)
         precision = 10;
         normaDensity = 1.;
         t_epsilon = 0.;
+        t_epsilon_first = 0.;
         Bcenter = 0.;
     }
     
@@ -474,6 +483,7 @@ bool InputReader::readCount(std::istream &in)
         {
 
             StringReader::getDoubleParameter(line, "t-epsilon ", t_epsilon);
+            StringReader::getDoubleParameter(line, "t-epsilon-first", t_epsilon_first);
             StringReader::getDoubleParameter(line, "Bcenter ", Bcenter);
 
             if (isLine(line, "injector"))

@@ -18,9 +18,12 @@ struct Injector
     double E;
     uint M;
     uint Z;
+    bool plusDirection;
+    int sign;
 
-    Injector(double rho, double phi, double z, double sigma, double r0, double theta, unsigned particles, double E=0., uint M=1, uint Z=1) : rho(rho), phi(phi), z(z), sigma(sigma),
-                                                                                                r0(r0), theta(theta), particles(particles), E(E), M(M), Z(Z)
+    Injector(double rho, double phi, double z, double sigma, double r0, double theta, unsigned particles, double E=0., uint M=1, uint Z=1, bool plusDirection=true) : rho(rho), phi(phi), z(z), sigma(sigma),
+                                                                                                r0(r0), theta(theta), particles(particles), E(E), M(M), Z(Z), plusDirection(plusDirection),
+                                                                                                sign(plusDirection ? 1 : -1)
     {}
 
 
@@ -37,23 +40,27 @@ struct Injector
     }
 
     double getVx() const {
-        return -getVperp() * sin(phi);
+        return -getVperp() * sin(phi) * sign;
     }
 
     double getVy() const {
-        return getVperp() * cos(phi);
+        return getVperp() * cos(phi) * sign;
     }
 
     double getVz() const {
         return getV() * cos(theta);
     }
 
+    double getRhoLarmor(double B) const {
+        return getVperp() / getOmege(B);
+    }
+
     double getDeltaX(double B) const {
-        return getVx()/getOmege(B);
+        return getVy()/getOmege(B);
     }
 
     double getDeltaY(double B) const {
-        return getVy() /getOmege(B);
+        return -getVx() /getOmege(B);
     };
 
 };

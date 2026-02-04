@@ -3,16 +3,17 @@
 #include <algorithm>
 #include <iostream>
 
-inline double Line::getRPoint(double t) const
+inline double Line::getRPoint(double t, int l) const
 { 
     double delta = (d - t * sinTheta);
-    return sqrt(rho2 + delta*delta); 
+    double r = rho + l*sign*rhoLarmor;
+    return sqrt(r*r + delta*delta); 
 }
 
-inline double Line::getPhiPoint(double t) const
+inline double Line::getPhiPoint(double t, int l) const
 {
-    double y = getYPoint(t);
-    double x = getXPoint(t);
+    double y = getYPoint(t, l);
+    double x = getXPoint(t, l);
 
     if (x > 0 && y >= 0)
         return atan(y/x);
@@ -31,12 +32,15 @@ inline double Line::getPhiPoint(double t) const
 Line::Line(
     double rho, double theta, double phi0_rho, double z0_rho,
     uint nz, uint nr, uint nphi,
-    const darray &zArray, const darray &rArray, const darray &phiArray, double t_epsilon) : rho(rho), rho2(rho * rho),
+    const darray &zArray, const darray &rArray, const darray &phiArray, double t_epsilon, double t_epsilon_first, bool plusDirection,
+                                                                double rhoLarmor) : rho(rho), rho2(rho * rho),
                                                                           theta(theta), phi0_rho(phi0_rho), z0_rho(z0_rho),
                                                                           sinTheta(sin(theta)), cosTheta(cos(theta)), sinPhi0(sin(phi0_rho)),
-                                                                          cosPhi0(cos(phi0_rho)), sx(-sinTheta * sinPhi0),
-                                                                          sy(sinTheta * cosPhi0), sz(cosTheta), intersectionPoints(nz * nr * nphi, false),
-                                                                          nz(nz), nr(nr), nphi(nphi), crossAxis(false), t_epsilon(t_epsilon), lineWork(false)
+                                                                          cosPhi0(cos(phi0_rho)), sign(plusDirection ? 1 : -1), sx(-sinTheta * sinPhi0*sign),
+                                                                          sy(sinTheta * cosPhi0*sign), sz(cosTheta), intersectionPoints(nz * nr * nphi, false),
+                                                                          nz(nz), nr(nr), nphi(nphi), crossAxis(false), t_epsilon(t_epsilon), 
+                                                                          t_epsilon_first(t_epsilon_first), rhoLarmor(rhoLarmor), lineWork(false)
+                                                                        
 
 {
     if (nz == 0 || nz == 0 || nphi == 0)
@@ -55,8 +59,8 @@ Line::Line(
     d = sqrt(Rmax*Rmax - rho*rho);
     t_crit = d / sinTheta;
 
-    x00 = rho*cosPhi0 + d * sinPhi0;
-    y00 = rho*sinPhi0 - d * cosPhi0;
+    x00 = rho*cosPhi0 + d * sinPhi0*sign;
+    y00 = rho*sinPhi0 - d * cosPhi0*sign;
     z00 = z0_rho - d * cosTheta / sinTheta;
 
     if (z00 < zmin || z00 >= zmax)
@@ -73,13 +77,15 @@ Line::Line(
 
 }
 
-inline double Line::getTR(double r, double tPrevious) const
+inline double Line::getTR(double r, double tPrevious, int l) const
 {
     double t1 = -1.;
     double t2 = -1.;
 
-    if (r >= rho) {
-        double sq = sqrt(r*r-rho2);
+    double rho_l = rho + l*sign*rhoLarmor;
+
+    if (r >= rho_l) {
+        double sq = sqrt(r*r-rho_l*rho_l);
         t1 = 1./sinTheta * (d - sq);
         t2 = 1./sinTheta * (d + sq);
     }
@@ -87,7 +93,7 @@ inline double Line::getTR(double r, double tPrevious) const
     return t_crit > tPrevious ? t1 : t2;
 }
 
-inline double Line::getTZ(double z) const
+inline double Line::getTZ(double z, int l) const
 {
     if (cosTheta > 1e-12)
         return (z - z00) / cosTheta;
@@ -95,13 +101,17 @@ inline double Line::getTZ(double z) const
         return -1.; // очень большой луч не пересикает
 }
 
-inline double Line::getTPhi(double phi) const
+inline double Line::getTPhi(double phi, int l) const
 {
     double tanPhi = tan(phi);
+
+    double x00_l = getX0L(l);
+    double y00_l = getY0L(l);
+
     if (phi != M_PI_2 && phi != 3. * M_PI_2)
-        return (tanPhi*x00-y00) / (sy - sx*tanPhi);
+        return (tanPhi*x00_l-y00_l) / (sy - sx*tanPhi);
     else
-        return - x00 / sx;
+        return - x00_l / sx;
 }
 
 void Line::getNewIndex(const Boundary &boundary, uint &iZ, uint &iR, uint &iPhi)
@@ -185,7 +195,7 @@ LineData Line::traceLine(uint nz, uint nr, uint nphi, const darray &zArray, cons
 
         if (t >= tPrevious && !checkBoundary(bPrevious, boundary, index_boundaries))
         {
-            if (t > tPrevious && !findBoundary)
+            if (t > tPrevious + t_epsilon_first && !findBoundary)
             {
                 s = (t - tPrevious);
                 tPrevious = t;

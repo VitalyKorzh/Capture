@@ -41,9 +41,6 @@ private:
     darray fillSArray(const Line &line) const; 
     void printSArray(const darray &sArray, uint i) const;
 
-
-    double rhoLarmor(double E, double theta, double phi, double B, double M, double Q) const;
-
 public:
     Counter(std::istream &in=std::cin, std::ostream &os=std::cout);
     void count();

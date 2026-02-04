@@ -88,6 +88,7 @@ private:
     double y00; // начальная точка луча y
     double z00; // начальная точка луча z
 
+    const int sign;
     const double sx; // направление луча x -sin(theta)*sin(phi0_rho)
     const double sy; // направление луча y sin(theta)*cos(phi0_rh0)
     const double sz; // направление луча z cos(theta)
@@ -108,18 +109,25 @@ private:
     bool crossAxis;
 
     const double t_epsilon;
+    const double t_epsilon_first;
+    const double rhoLarmor;
+
     bool lineWork; // удалось ли прорисовать луч
 
-    inline double getXPoint(double t) const { return x00 + t * sx; }
-    inline double getYPoint(double t) const { return y00 + t * sy; }
-    inline double getZPoint(double t) const { return z00 + t * sz; }
-    inline double getRPoint(double t) const; // sqrt(x**2+y**2)
-    inline double getPhiPoint(double t) const;
+
+    inline double getX0L(int l=0) const { return x00 + l*sign*rhoLarmor*cosPhi0; }
+    inline double getY0L(int l=0) const { return y00 + l*sign*rhoLarmor*sinPhi0; }
+
+    inline double getXPoint(double t, int l=0) const { return getX0L(l) + t * sx; }
+    inline double getYPoint(double t, int l=0) const { return getY0L(l) + t * sy; }
+    inline double getZPoint(double t, int l=0) const { return z00 + t * sz; }
+    inline double getRPoint(double t, int l=0) const; // sqrt(x**2+y**2)
+    inline double getPhiPoint(double t, int l=0) const;
     
 
-    inline double getTR(double r, double tPrevious=-1.) const;
-    inline double getTZ(double z) const;
-    inline double getTPhi(double phi) const;
+    inline double getTR(double r, double tPrevious=-1., int l=0) const;
+    inline double getTZ(double z, int l=0) const;
+    inline double getTPhi(double phi, int l=0) const;
 
     void getNewIndex(const Boundary &boundary, uint &iZ, uint &iR, uint &iPhi);
 
@@ -138,7 +146,8 @@ public:
     Line(double rho, double theta, double phi0_rho, double z0_rho, 
         uint nz, uint nr, uint nphi, 
         const darray &zArray, const darray &rArray, const darray &phiArray,
-        double t_epsilon=0.      
+        double t_epsilon=0., double t_epsilon_first=0., bool plusDirection=true,
+        double rhoLarmor=0.      
     );
 
 
