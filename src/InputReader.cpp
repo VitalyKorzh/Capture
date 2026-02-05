@@ -14,6 +14,7 @@ bool InputReader::readInjector(std::istream &in)
     double z = 0;
     double phi = -1;
 
+    double deltaTheta = 0;
 
     uint Z = 1;
     uint M = 1;
@@ -28,6 +29,7 @@ bool InputReader::readInjector(std::istream &in)
     while(line.find("injector end") == std::string::npos)
     {
         StringReader::getDoubleParameter(line, "theta ", theta);
+        StringReader::getDoubleParameter(line, "dtheta ", deltaTheta);
         StringReader::getUnsignedParameter(line, "particles ", nParticles);
         StringReader::getDoubleParameter(line, "r0 ", r0);
         StringReader::getDoubleParameter(line, "sigma ", sigma);
@@ -65,6 +67,12 @@ bool InputReader::readInjector(std::istream &in)
         return false;
     }
 
+    if (deltaTheta < 0)
+    {
+        errorMessage("угловой разброс dtheta >= 0");
+        return false;
+    }
+
     if (nParticles == 0)
     {
         errorMessage("не правильное число частиц particles > 0");
@@ -85,7 +93,7 @@ bool InputReader::readInjector(std::istream &in)
 
     theta *= M_PI / 180.;
 
-    injectors.push_back(Injector(rho, phi, z, sigma, r0, theta, nParticles, E, M, Z, plusDirection));
+    injectors.push_back(Injector(rho, phi, z, sigma, r0, theta, deltaTheta, nParticles, E, M, Z, plusDirection));
 
     return true;
 }
