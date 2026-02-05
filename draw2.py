@@ -9,11 +9,12 @@ import sys
 
 class Injector:
 
-    def __init__(self, rho, phi, z0, theta, r0, E, Z, M, sign):
+    def __init__(self, rho, phi, z0, theta, dtheta, r0, E, Z, M, sign):
         self.rho = rho
         self.phi = phi
         self.z0 = z0
         self.theta = theta
+        self.dtheta = dtheta
         self.r0 = r0
         self.E = E
         self.Z = Z
@@ -137,6 +138,8 @@ class Draw:
                     line = file.readline()
                     r0 = float([i for i in line.split('=')][-1])
                     line = file.readline()
+                    dtheta = float(line.split("=")[-1]) * np.pi / 180.
+                    line = file.readline()
                     line = file.readline()
                     rho = float([i for i in line.split('=')][-1])
                     line = file.readline()
@@ -169,7 +172,7 @@ class Draw:
                     print("injection %d l: %f" %(nInjector, 2.*np.sqrt(rmax*rmax-rho*rho) / np.sin(theta)))
                     nInjector+=1
 
-                    data['injectors'].append(Injector(rho, phi, z0, theta, r0, E, Z, M, sign))
+                    data['injectors'].append(Injector(rho, phi, z0, theta, dtheta, r0, E, Z, M, sign))
 
 
                 line = file.readline()

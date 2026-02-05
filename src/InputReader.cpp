@@ -92,6 +92,7 @@ bool InputReader::readInjector(std::istream &in)
     }
 
     theta *= M_PI / 180.;
+    deltaTheta *= M_PI / 180.;
 
     injectors.push_back(Injector(rho, phi, z, sigma, r0, theta, deltaTheta, nParticles, E, M, Z, plusDirection));
 

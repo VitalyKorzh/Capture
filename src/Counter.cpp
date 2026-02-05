@@ -178,15 +178,18 @@ void Counter::count()
     std::uniform_real_distribution <> distGamma(0., 1.);
 
     uint index = 0;
+
+    uint extra_flyby = 0;
     for (Injector injector : injectors)
     {
         double rho = injector.rho;
         double phi = injector.phi;
         double r0 = injector.r0;
+        double dtheta = injector.deltaTheta;
 
         darray sArray;
 
-        if (r0 == 0) {
+        if (r0 == 0. && dtheta == 0.) {
             Line line(rho, injector.theta, phi,  injector.z, nz, nr, nphi, zArray, rArray,  phiArray, reader.t_epsilon, reader.t_epsilon_first, 
                         injector.plusDirection, injector.getRhoLarmor(reader.Bcenter));
 
@@ -207,18 +210,35 @@ void Counter::count()
         {
             std::normal_distribution<double> dist_x(rho * cos(phi), r0);
             std::normal_distribution<double> dist_y(rho * sin(phi), r0);
+            std::normal_distribution<double> dist_theta(injector.theta, dtheta);
+
+            double cos0 = cos(phi);
+            double sin0 = sin(phi);
 
             for (uint it = 0; it < injector.particles; it++)
             {
-                double x = dist_x(gen);
-                double y = dist_y(gen);
+                double x = r0 == 0. ? rho*cos(phi) : dist_x(gen);
+                double y = r0 == 0. ? rho*sin(phi) : dist_y(gen);
+                double theta_new = dtheta == 0. ? injector.theta : dist_theta(gen);
 
-                double rho_new = sqrt(x*x+y*y);
-                double phi_new = atan2(y, x);
+                //double rho_new = sqrt(x*x+y*y);
+                double rho_new = x*cos0 + y*sin0;
+                double t_new = (y*cos0 - x*sin0)/(injector.sign*sin(theta_new));
 
-                if (phi_new < 0) phi_new += 2 * M_PI;
+                if (rho_new >= rArray.back()) // не расчитвать такой луч
+                {
+                    nFlyby++;
+                    extra_flyby++;
+                    continue;
+                }
 
-                Line line(rho_new, injector.theta, phi_new,  injector.z, nz, nr, nphi, zArray, rArray,  phiArray, reader.t_epsilon, reader.t_epsilon_first, 
+                double z_new = injector.z - t_new*cos(theta_new);
+
+                //double phi_new = atan2(y, x);
+
+                //if (phi_new < 0) phi_new += 2 * M_PI;
+
+                Line line(rho_new, theta_new, phi,  z_new, nz, nr, nphi, zArray, rArray,  phiArray, reader.t_epsilon, reader.t_epsilon_first, 
                                 injector.plusDirection, injector.getRhoLarmor(reader.Bcenter));
                 if (line.getLineWork())
                     process(line, injector, distGamma(gen));
@@ -233,6 +253,8 @@ void Counter::count()
         index++;
     }
 
+    if (extra_flyby != 0)
+        std::cerr << "extra-flyby: " << extra_flyby << "\n"; 
     countIonN();
 }
 
@@ -271,6 +293,7 @@ void Counter::printStartInfo() const
         os << "# \t\ttheta=" << injector.theta*180./M_PI << "\n";
         os << "# \t\tsigma=" << injector.sigma << "\n";
         os << "# \t\tr0=" << injector.r0 << "\n";
+        os << "# \t\tdtheta=" << injector.deltaTheta*180./M_PI << "\n";
         os << "# \t\tposition\n";
         os << "# \t\t\trho=" << injector.rho << "\n";
         os << "# \t\t\tz=" << injector.z << "\n";
