@@ -38,14 +38,14 @@ bool commands(std::string &inputFile, std::string &outputFile, int argc, char **
         }
         else if (arg == "-i" || arg == "--input")
         {
-            const char *file;
+            const char *file = "";
             command = readFileName(i, argc, argv, file, nullptr, nullptr);
             if (command)
                 inputFile = file;
         }
         else if (arg == "-o" || arg == "--out")
         {
-            const char *file;
+            const char *file = "";
             command = readFileName(i, argc, argv, file, nullptr, nullptr);
             if (command)
                 outputFile = file;
