@@ -33,7 +33,7 @@ Line::Line(
     double rho, double theta, double phi0_rho, double z0_rho,
     uint nz, uint nr, uint nphi,
     const darray &zArray, const darray &rArray, const darray &phiArray, double t_epsilon, double t_epsilon_first, bool plusDirection,
-                                                                double rhoLarmor) : rho(rho), rho2(rho * rho),
+                                                                double rhoLarmor, double rMax) : rho(rho),
                                                                           theta(theta), phi0_rho(phi0_rho), z0_rho(z0_rho),
                                                                           sinTheta(sin(theta)), cosTheta(cos(theta)), sinPhi0(sin(phi0_rho)),
                                                                           cosPhi0(cos(phi0_rho)), sign(plusDirection ? 1 : -1), sx(-sinTheta * sinPhi0*sign),
@@ -50,6 +50,12 @@ Line::Line(
         return;
 
     Rmax = rArray.back();
+    if (rMax > 0. && rMax < Rmax)
+    {
+        uint iR = findIndex(rArray, nr, rMax);
+        Rmax = rArray[iR+1];
+    }
+
     zmin = zArray.front();
     zmax = zArray.back();
 
@@ -240,9 +246,10 @@ LineData Line::traceLine(uint nz, uint nr, uint nphi, const darray &zArray, cons
         crossAxis = true;
         iR = 0;
         double phi_new = phi_current+M_PI >= 2. * M_PI ? phi_current - M_PI : phi_current + M_PI;
-        for (uint iphi = 0; iphi < nphi; iphi++)
-           if (phi_new >= phiArray[iphi] && phi_new < phiArray[iphi+1])
-               iPhi = iphi;
+        iPhi = findIndex(phiArray, nphi, phi_new);
+        //for (uint iphi = 0; iphi < nphi; iphi++)
+        //   if (phi_new >= phiArray[iphi] && phi_new < phiArray[iphi+1])
+        //       iPhi = iphi;
     }
     else
         crossAxis = false;
@@ -261,19 +268,22 @@ bool Line::createDataArray(uint nz, uint nr, uint nphi,
     uint iPhi = 0;
 
     {
-        for (uint iz = 0; iz < nz; iz++)
-        {
-            if (z00 >= zArray[iz] && z00 < zArray[iz+1])
-                iZ = iz;
-        }
+        iZ = findIndex(zArray, nz, z00);
+        iPhi = findIndex(phiArray, nphi, getPhiPoint(0.));
+        iR = findIndex(rArray, nr, Rmax, false);
+        // for (uint iz = 0; iz < nz; iz++)
+        // {
+        //     if (z00 >= zArray[iz] && z00 < zArray[iz+1])
+        //         iZ = iz;
+        // }
             
             
-        double phi00 = getPhiPoint(0.);
-        for (uint iphi = 0; iphi < nphi; iphi++)
-        {
-            if (phi00 >= phiArray[iphi] && phi00 < phiArray[iphi+1])
-                iPhi = iphi;
-        }
+        // double phi00 = getPhiPoint(0.);
+        // for (uint iphi = 0; iphi < nphi; iphi++)
+        // {
+        //     if (phi00 >= phiArray[iphi] && phi00 < phiArray[iphi+1])
+        //         iPhi = iphi;
+        // }
     }
 
     ns = 0;
@@ -292,4 +302,21 @@ bool Line::createDataArray(uint nz, uint nr, uint nphi,
     //std::cout << "t_start: " << 0 <<  " t_end: " << tPrevious << "\n";
 
     return true;
+}
+
+uint Line::findIndex(const darray &array, uint n, double value, bool left) const
+{
+    if (left)
+        for (uint i = 0; i < n; i++)
+        {
+            if (value >= array[i] && value < array[i+1])
+                return i;
+        }
+    else
+        for (uint i = 0; i < n; i++)
+        {
+            if (value > array[i] && value <= array[i+1])
+                return i;
+        }
+    return -1;
 }

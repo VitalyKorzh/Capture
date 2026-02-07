@@ -72,7 +72,6 @@ private:
     };
 
     const double rho; // прицельный параметер
-    const double rho2;
     const double theta; // питч-угол
     const double phi0_rho; // угол при r = rho
     const double z0_rho; // растояние по оси z при r = rho
@@ -143,12 +142,15 @@ private:
     bool createDataArray(uint nz, uint nr, uint nphi, const darray &zArray, 
                         const darray &rArray, const darray &phiArray);
 
+
+    uint findIndex(const darray &array, uint n, double value, bool left=true) const;
+
 public:
     Line(double rho, double theta, double phi0_rho, double z0_rho, 
         uint nz, uint nr, uint nphi, 
         const darray &zArray, const darray &rArray, const darray &phiArray,
         double t_epsilon=0., double t_epsilon_first=0., bool plusDirection=true,
-        double rhoLarmor=0.      
+        double rhoLarmor=0., double rMax=-1.    
     );
 
 
