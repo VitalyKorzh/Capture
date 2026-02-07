@@ -13,6 +13,9 @@ int main(int argc, char** argv)
 
     bool work = commands(inputFile, outputFile, argc, argv);
 
+    if (inputFile == "")
+        return 0;
+
     if (!work) {
         return 1;
     }
