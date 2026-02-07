@@ -46,7 +46,7 @@ Line::Line(
     if (nz == 0 || nz == 0 || nphi == 0)
         return;
 
-    if (theta <= 0.)
+    if (theta <= 0. || rho < 0)
         return;
 
     Rmax = rArray.back();
@@ -280,7 +280,7 @@ bool Line::createDataArray(uint nz, uint nr, uint nphi,
 
     const uint N_PREV_BOUNDARIES = 4;
     std::vector <Boundary> previousBoundaries(N_PREV_BOUNDARIES, Boundary());
-
+    data.reserve(4*nr);
     while (iZ != nz && iR != nr) {
         //std::cout << "iz: " << iZ << " ir: " << iR << " iphi: " << iPhi << "\n";
         data.push_back(traceLine(nz, nr, nphi, zArray, rArray, phiArray, tPrevious, iZ, iR, iPhi, previousBoundaries));

@@ -215,15 +215,23 @@ void Counter::count()
             double cos0 = cos(phi);
             double sin0 = sin(phi);
 
+            
             for (uint it = 0; it < injector.particles; it++)
             {
+                bool direction = injector.plusDirection;
                 double x = r0 == 0. ? rho*cos(phi) : dist_x(gen);
                 double y = r0 == 0. ? rho*sin(phi) : dist_y(gen);
                 double theta_new = dtheta == 0. ? injector.theta : dist_theta(gen);
-
-                //double rho_new = sqrt(x*x+y*y);
                 double rho_new = x*cos0 + y*sin0;
                 double t_new = (y*cos0 - x*sin0)/(injector.sign*sin(theta_new));
+                double z_new = injector.z - t_new*cos(theta_new);
+                double phi_new = phi;
+                if (rho_new < 0)
+                {
+                    rho_new *= -1.;
+                    phi_new += M_PI;
+                    direction = !direction;
+                }
 
                 if (rho_new >= rArray.back()) // не расчитвать такой луч
                 {
@@ -232,14 +240,9 @@ void Counter::count()
                     continue;
                 }
 
-                double z_new = injector.z - t_new*cos(theta_new);
 
-                //double phi_new = atan2(y, x);
-
-                //if (phi_new < 0) phi_new += 2 * M_PI;
-
-                Line line(rho_new, theta_new, phi,  z_new, nz, nr, nphi, zArray, rArray,  phiArray, reader.t_epsilon, reader.t_epsilon_first, 
-                                injector.plusDirection, injector.getRhoLarmor(reader.Bcenter));
+                Line line(rho_new, theta_new, phi_new,  z_new, nz, nr, nphi, zArray, rArray,  phiArray, reader.t_epsilon, reader.t_epsilon_first, 
+                                direction, injector.getRhoLarmor(reader.Bcenter));
                 if (line.getLineWork())
                     process(line, injector, distGamma(gen));
                 else {
