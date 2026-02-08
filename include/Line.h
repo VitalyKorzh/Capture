@@ -46,17 +46,20 @@ private:
         IntersectionType type;
         IntersectionDirection direction;
         uint index;
+        bool isCenter;
 
         Boundary(double t_boundary=0, IntersectionType type=IntersectionType::None, IntersectionDirection direction=IntersectionDirection::MIN,
-                        uint index=0) : 
-                        t_boundary(t_boundary), type(type), direction(direction), index(index) {}
+                        uint index=0, bool isCenter=false) : 
+                        t_boundary(t_boundary), type(type), direction(direction), index(index),
+                        isCenter(isCenter)
+                        {}
 
 
         bool operator != (const Boundary& boundary) const { 
-            return this->type == IntersectionType::R || this->type != boundary.type || this->direction == boundary.direction; 
+            return this->type == IntersectionType::R || this->type != boundary.type || this->direction == boundary.direction || this->isCenter != boundary.isCenter; 
         }
         bool operator == (const Boundary& boundary) const { 
-            return  this->type != IntersectionType::R && this->type == boundary.type && this->direction != boundary.direction; 
+            return  this->type != IntersectionType::R && this->type == boundary.type && this->direction != boundary.direction && this->isCenter == boundary.isCenter; 
         }
 
 
@@ -68,6 +71,7 @@ private:
                 this->type = boundary.type;
                 this->direction = boundary.direction;
                 this->index = boundary.index;
+                this->isCenter = boundary.isCenter;
             }
             return *this;
         }
@@ -140,7 +144,7 @@ private:
 
 
     bool checkBoundary(const std::vector <Boundary> &boundaryArray, const Boundary & boundary, uint index=0) const;
-    bool checkBoundaryR(const std::vector <Boundary> &boundaryArray, Boundary::IntersectionDirection direction, uint index=0) const;
+    bool checkBoundaryR(const std::vector <Boundary> &boundaryArray, Boundary::IntersectionDirection direction, bool isCenter=false, uint index=0) const;
 
     LineData traceLine(uint nz, uint nr, uint nphi, const darray &zArray, 
                         const darray &rArray, const darray &phiArray, 
@@ -148,7 +152,7 @@ private:
 
     LineData traceLineCenter(uint nz, uint nr, uint nphi, const darray &zArray, 
                         const darray &rArray, const darray &phiArray, 
-                        double tPrevious, CellIndex &index, CellIndex &indexCenter, std::vector <Boundary> &bPrevious);
+                        double &tPrevious, CellIndex &index, CellIndex &indexCenter, std::vector <Boundary> &bPrevious);
 
 
     bool createDataArray(uint nz, uint nr, uint nphi, const darray &zArray, 

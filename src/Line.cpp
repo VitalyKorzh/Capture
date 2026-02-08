@@ -101,7 +101,7 @@ inline double Line::getTR(double r, double tPrevious, int l) const
 
     double rho_l = rho + l*sign*rhoLarmor;
 
-    if (r >= rho_l) {
+    if (r*r >= rho_l*rho_l) {
         double sq = sqrt(r*r-rho_l*rho_l);
         t1 = 1./sinTheta * (d - sq);
         t2 = 1./sinTheta * (d + sq);
@@ -127,8 +127,10 @@ inline double Line::getTPhi(double phi, int l) const
 
     if (phi != M_PI_2 && phi != 3. * M_PI_2)
         return (tanPhi*x00_l-y00_l) / (sy - sx*tanPhi);
-    else
+    else if (sx != 0.)
         return - x00_l / sx;
+    else
+        return -1.; //если nan то ломается сортировка
 }
 
 void Line::getNewIndex(const Boundary &boundary, CellIndex &index)
@@ -159,11 +161,11 @@ bool Line::checkBoundary(const std::vector<Boundary> &boundaryArray, const Bound
     return false;
 }
 
-bool Line::checkBoundaryR(const std::vector<Boundary> &boundaryArray, Boundary::IntersectionDirection direction, uint index) const
+bool Line::checkBoundaryR(const std::vector<Boundary> &boundaryArray, Boundary::IntersectionDirection direction, bool isCenter, uint index) const
 {
     for (uint ii = index; ii < boundaryArray.size(); ii++)
     {
-        if (boundaryArray[ii].type == Boundary::IntersectionType::R && boundaryArray[ii].direction == direction)
+        if (boundaryArray[ii].type == Boundary::IntersectionType::R && boundaryArray[ii].direction == direction && boundaryArray[ii].isCenter == isCenter)
             return true;
     }
     return false;
@@ -261,15 +263,122 @@ LineData Line::traceLine(uint nz, uint nr, uint nphi, const darray &zArray, cons
 
 LineData Line::traceLineCenter(uint nz, uint nr, uint nphi, 
                         const darray &zArray, const darray &rArray, const darray &phiArray, 
-                        double tPrevious, CellIndex &index, CellIndex &indexCenter, 
+                        double &tPrevious, CellIndex &index, CellIndex &indexCenter, 
                         std::vector <Boundary> &bPrevious)
 {
+    //double r_current = getRPoint(tPrevious);
+    //double r_current_c = getRPoint(tPrevious, 1);
+    //double z_current = getZPoint(tPrevious);
+    double phi_current = getPhiPoint(tPrevious);
+    double phi_current_c = getPhiPoint(tPrevious, 1);
     double s = 0.;
-
+    
+    double r1 = rArray[index.iR];
+    double r2 = rArray[index.iR+1];
+    double z1 = zArray[index.iZ];
+    double z2 = zArray[index.iZ+1];
+    double phi1 = phiArray[index.iPhi];
+    double phi2 = phiArray[index.iPhi+1];
+    
+    double r1_c = rArray[indexCenter.iR];
+    double r2_c = rArray[indexCenter.iR+1];
+    double z1_c = zArray[indexCenter.iZ];
+    double z2_c = zArray[indexCenter.iZ+1];
+    double phi1_c = phiArray[indexCenter.iPhi];
+    double phi2_c = phiArray[indexCenter.iPhi+1];
+    
     CellIndex indexPrev = index;
     CellIndex indexCenterPrev = indexCenter;
 
+    double t_r1 = getTR(r1, tPrevious);
+    double t_r2 = getTR(r2, t_r1 >= 0. ? tPrevious : t_crit+1.);
+    double t_r1_c = getTR(r1_c, tPrevious, 1);
+    double t_r2_c = getTR(r2_c, t_r1_c >= 0. ? tPrevious : t_crit+1., 1);
+
+    std::vector<Boundary> boundaries= 
+    {
+        Boundary(getTZ(z1), Boundary::IntersectionType::Z, Boundary::IntersectionDirection::MIN, index.iZ > 0 ? index.iZ-1 : nz),
+        Boundary(getTZ(z2), Boundary::IntersectionType::Z, Boundary::IntersectionDirection::MAX, index.iZ+1),
+        Boundary(t_r1, Boundary::IntersectionType::R, Boundary::IntersectionDirection::MIN, index.iR > 0 ? index.iR-1: nr+1),
+        Boundary(t_r2, Boundary::IntersectionType::R, Boundary::IntersectionDirection::MAX, index.iR+1),
+        Boundary(getTPhi(phi1), Boundary::IntersectionType::Phi, Boundary::IntersectionDirection::MIN, index.iPhi > 0 ? (index.iPhi-1) % nphi : nphi-1),
+        Boundary(getTPhi(phi2), Boundary::IntersectionType::Phi, Boundary::IntersectionDirection::MAX, (index.iPhi+1) % nphi ),
+
+        Boundary(getTZ(z1_c, 1), Boundary::IntersectionType::Z, Boundary::IntersectionDirection::MIN, indexCenter.iZ > 0 ? indexCenter.iZ-1 : nz, true),
+        Boundary(getTZ(z2_c, 1), Boundary::IntersectionType::Z, Boundary::IntersectionDirection::MAX, indexCenter.iZ+1, true),
+        Boundary(t_r1_c, Boundary::IntersectionType::R, Boundary::IntersectionDirection::MIN, indexCenter.iR > 0 ? indexCenter.iR-1: nr+1, true),
+        Boundary(t_r2_c, Boundary::IntersectionType::R, Boundary::IntersectionDirection::MAX, indexCenter.iR+1, true),
+        Boundary(getTPhi(phi1_c, 1), Boundary::IntersectionType::Phi, Boundary::IntersectionDirection::MIN, 
+        indexCenter.iPhi > 0 ? (indexCenter.iPhi-1) % nphi : nphi-1, true),
+        Boundary(getTPhi(phi2_c, 1), Boundary::IntersectionType::Phi, Boundary::IntersectionDirection::MAX, (indexCenter.iPhi+1) % nphi, true)
+    };
+
+    { //нужно акуратно развернуть луч
+        if (t_r1 < 0. && std::abs(tPrevious - t_crit) <= t_epsilon_first && checkBoundaryR(bPrevious, Boundary::IntersectionDirection::MIN))
+            index.iR++;
+        if (t_r1_c < 0. && std::abs(tPrevious - t_crit) <= t_epsilon_first && checkBoundaryR(bPrevious, Boundary::IntersectionDirection::MIN, true))
+            indexCenter.iR++;
+    }
+    
+    std::sort(boundaries.begin(), boundaries.end(), [](Boundary a, Boundary b) 
+        {
+            return a.t_boundary < b.t_boundary;
+        }
+    );
+
+    bool findBoundary = false;
+    uint index_boundaries = 0;
+
+    for (Boundary boundary : boundaries)
+    {
+        double t = boundary.t_boundary;
+
+        if (t >= tPrevious && !checkBoundary(bPrevious, boundary, index_boundaries))
+        {
+            if (t > tPrevious + t_epsilon_first && !findBoundary)
+            {
+                s = (t - tPrevious);
+                tPrevious = t;
+                findBoundary = true;
+                getNewIndex(boundary, boundary.isCenter ? indexCenter : index);
+    
+                bPrevious[index_boundaries] = boundary;
+                index_boundaries++;
+            }
+            else if ((t - tPrevious) <= t_epsilon && findBoundary)
+            {
+                getNewIndex(boundary, boundary.isCenter ? indexCenter : index);
+                s += (t-tPrevious);
+                tPrevious = t;
+                
+                bPrevious[index_boundaries] = boundary;
+                index_boundaries++;
+            }
+        }
+    }
+
+    for (uint ii = index_boundaries; ii < bPrevious.size(); ii++)
+        bPrevious[ii].type = Boundary::IntersectionType::None;
+
     LineData data(indexPrev, s, indexCenterPrev);
+
+    if (index.iR == nr+1) // луч прошел через ось
+    {
+        crossAxis = true;
+        index.iR = 0;
+        double phi_new = phi_current+M_PI >= 2. * M_PI ? phi_current - M_PI : phi_current + M_PI;
+        index.iPhi = findIndex(phiArray, nphi, phi_new);
+    }
+    else if (indexCenter.iR == nr+1)
+    {
+        crossAxis = true;
+        indexCenter.iR = 0;
+        double phi_new = phi_current_c+M_PI >= 2. * M_PI ? phi_current_c - M_PI : phi_current_c + M_PI;
+        indexCenter.iPhi = findIndex(phiArray, nphi, phi_new);
+    }
+    else
+        crossAxis = false;
+
     return data;
 }
 
@@ -304,16 +413,19 @@ bool Line::createDataArray(uint nz, uint nr, uint nphi,
     ns = 0;
 
     const uint N_PREV_BOUNDARIES = 4;
-    std::vector <Boundary> previousBoundaries(N_PREV_BOUNDARIES, Boundary());
-    data.reserve(4*nr);
+    uint size_coeff = count_centers ? 2 : 1;
+    std::vector <Boundary> previousBoundaries(size_coeff*N_PREV_BOUNDARIES, Boundary());
+    data.reserve(size_coeff*4*nr);
     while (index.iZ != nz && index.iR != iR_crit+1) {
         LineData data0 = count_centers ?
             traceLineCenter(nz, nr, nphi, zArray, rArray, phiArray, tPrevious, index, indexCenter, previousBoundaries) :
             traceLine(nz, nr, nphi, zArray, rArray, phiArray, tPrevious, index, previousBoundaries);
         data.push_back(data0);
         ns++;
-        if (ns > nr*nz*nphi)
+        if (ns > nr*nz*nphi*size_coeff) {
+            std::cerr << "вышли за предел числа итераций!\n";
             return false;
+        }
     }
 
     return true;
