@@ -114,6 +114,7 @@ InputReader::InputReader(std::istream &in)
         t_epsilon = 0.;
         t_epsilon_first = 0.;
         Bcenter = 0.;
+        count_centers = false;
     }
     
     bool findMesh = false;
@@ -512,6 +513,9 @@ bool InputReader::readCount(std::istream &in)
             StringReader::getDoubleParameter(line, "t-epsilon ", t_epsilon);
             StringReader::getDoubleParameter(line, "t-epsilon-first", t_epsilon_first);
             StringReader::getDoubleParameter(line, "Bcenter ", Bcenter);
+
+            if (line.find("count-center") != std::string::npos)
+                count_centers = true;
 
             if (isLine(line, "injector"))
             {

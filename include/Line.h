@@ -12,13 +12,11 @@ typedef unsigned uint;
 
 struct LineData
 {
-    // uint iZ;
-    // uint iR;
-    // uint iPhi;
     CellIndex index;
+    CellIndex indexCenter;
     double s;
     LineData(uint iZ=0, uint iR=0, uint iPhi=0, double s=0) : 
-    index(iZ, iR, iPhi), s(s)
+    index(iZ, iR, iPhi), indexCenter(iZ,iR,iPhi), s(s)
     {}
 
 };
@@ -97,6 +95,7 @@ private:
 
     uint ns;
     barray intersectionPoints; // точки пересечения линии
+    barray intescetionPointsCenter; // точки пересечения линии ценртов
     std::vector <LineData> data; // положение линии
 
     uint nz;
@@ -114,6 +113,8 @@ private:
     const double t_epsilon_first;
     const double rhoLarmor;
 
+    const bool count_centers;
+
     bool lineWork; // удалось ли прорисовать луч
 
 
@@ -124,6 +125,7 @@ private:
     inline double getYPoint(double t, int l=0) const { return getY0L(l) + t * sy; }
     inline double getZPoint(double t, int l=0) const { return z00 + t * sz; }
     inline double getRPoint(double t, int l=0) const; // sqrt(x**2+y**2)
+    inline double getRLarmorPoint(double r) const;
     inline double getPhiPoint(double t, int l=0) const;
     
 
@@ -153,7 +155,7 @@ public:
         uint nz, uint nr, uint nphi, 
         const darray &zArray, const darray &rArray, const darray &phiArray,
         double t_epsilon=0., double t_epsilon_first=0., bool plusDirection=true,
-        double rhoLarmor=0., double rMax=-1.    
+        double rhoLarmor=0., double rMax=-1., bool count_centers=false
     );
 
 

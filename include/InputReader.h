@@ -47,6 +47,7 @@ private:
 
     double t_epsilon;
     double t_epsilon_first;
+    bool count_centers;
 
     double Bcenter;
 

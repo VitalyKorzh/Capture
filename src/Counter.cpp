@@ -43,14 +43,20 @@ void Counter::process(const Line &line, const Injector &injector, double gamma, 
         const LineData &data = line.getData()[is];
         uint ir = data.index.iR;
         uint iz = data.index.iZ;
-        uint iphi = data.index.iPhi;
-        intersectionCell[getIndex(iz, ir, iphi)] = true;
+        uint index = getIndex(data.index);
+        uint indexCenter = getIndex(data.indexCenter);
+        bool isCenter = reader.count_centers && (data.indexCenter.iR < nr) && (data.indexCenter.iZ < nz) && (data.indexCenter.iPhi < nphi); //заполнять ли центры
+        intersectionCell[index] = true;
+        if (isCenter)
+            intersectionCellCenter[indexCenter] = true;
         integral += data.s*ni[getIndex(iz, ir, 0)]*injector.sigma*reader.normaDensity;
         P2 = 1. - exp(-integral);
 
         if (P1 < gamma && P2 > gamma)
         {
-            nCap[getIndex(iz, ir, iphi)]++;
+            nCap[index]++;
+            if  (isCenter)
+                nCapCenter[indexCenter]++;
 
             if (sArray != nullptr)
                 (*sArray)[1+2*ns+is]++;
@@ -161,7 +167,7 @@ void Counter::count()
 
         if (r0 == 0. && dtheta == 0.) {
             Line line(rho, injector.theta, phi,  injector.z, nz, nr, nphi, zArray, rArray,  phiArray, reader.t_epsilon, reader.t_epsilon_first, 
-                        injector.plusDirection, injector.getRhoLarmor(reader.Bcenter), injector.Rinjection);
+                        injector.plusDirection, injector.getRhoLarmor(reader.Bcenter), injector.Rinjection, reader.count_centers);
 
             sArray = fillSArray(line);
 
@@ -212,7 +218,7 @@ void Counter::count()
 
 
                 Line line(rho_new, theta_new, phi_new,  z_new, nz, nr, nphi, zArray, rArray,  phiArray, reader.t_epsilon, reader.t_epsilon_first, 
-                                direction, injector.getRhoLarmor(reader.Bcenter), injector.Rinjection);
+                                direction, injector.getRhoLarmor(reader.Bcenter), injector.Rinjection, reader.count_centers);
                 if (line.getLineWork())
                     process(line, injector, distGamma(gen));
                 else {

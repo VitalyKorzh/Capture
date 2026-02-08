@@ -367,9 +367,10 @@ class Draw:
 
         #настройка оси
         ax.set(xlabel='z, см', ylabel='x, см', zlabel='y, см')
-        ax.set_xlim(1.5*self.zArray[0], 1.5*self.zArray[-1])
-        ax.set_ylim(-2*self.rArray[-1], 2*self.rArray[-1])
-        ax.set_zlim(-2*self.rArray[-1], 2*self.rArray[-1])
+        coeff = 1.2
+        ax.set_xlim(coeff*self.zArray[0], coeff*self.zArray[-1])
+        ax.set_ylim(-coeff*self.rArray[-1], coeff*self.rArray[-1])
+        ax.set_zlim(-coeff*self.rArray[-1], coeff*self.rArray[-1])
 
     def drawCapFromLine(self):
         fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(12, 6))

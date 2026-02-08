@@ -13,6 +13,8 @@ struct CellIndex
     {}
 
     uint getIndex(uint nz, uint nr) const { return iR + nr*iZ + nr*nz*iPhi; }
+
+    bool errorIndex() const { return iZ == (uint) -1 || iR == (uint) -1 || iPhi == (uint)-1; }
 };
 
 

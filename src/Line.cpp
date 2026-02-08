@@ -10,6 +10,12 @@ inline double Line::getRPoint(double t, int l) const
     return sqrt(r*r + delta*delta); 
 }
 
+inline double Line::getRLarmorPoint(double r) const
+{
+    double r0 = rho + sign*rhoLarmor;
+    return sqrt(r0*r0+r*r-rho*rho);
+}
+
 inline double Line::getPhiPoint(double t, int l) const
 {
     double y = getYPoint(t, l);
@@ -32,16 +38,17 @@ inline double Line::getPhiPoint(double t, int l) const
 Line::Line(
     double rho, double theta, double phi0_rho, double z0_rho,
     uint nz, uint nr, uint nphi,
-    const darray &zArray, const darray &rArray, const darray &phiArray, double t_epsilon, double t_epsilon_first, bool plusDirection,
-                                                                double rhoLarmor, double rMax) : rho(rho),
-                                                                          theta(theta), phi0_rho(phi0_rho), z0_rho(z0_rho),
-                                                                          sinTheta(sin(theta)), cosTheta(cos(theta)), sinPhi0(sin(phi0_rho)),
-                                                                          cosPhi0(cos(phi0_rho)), sign(plusDirection ? 1 : -1), sx(-sinTheta * sinPhi0*sign),
-                                                                          sy(sinTheta * cosPhi0*sign), sz(cosTheta), intersectionPoints(nz * nr * nphi, false),
-                                                                          nz(nz), nr(nr), nphi(nphi), crossAxis(false), t_epsilon(t_epsilon), 
-                                                                          t_epsilon_first(t_epsilon_first), rhoLarmor(rhoLarmor), lineWork(false)
-                                                                        
-
+    const darray &zArray, const darray &rArray, const darray &phiArray, double t_epsilon, 
+    double t_epsilon_first, bool plusDirection, double rhoLarmor, double rMax, bool count_centers) :
+                                                            rho(rho),
+                                                            theta(theta), phi0_rho(phi0_rho), z0_rho(z0_rho),
+                                                            sinTheta(sin(theta)), cosTheta(cos(theta)), sinPhi0(sin(phi0_rho)),
+                                                            cosPhi0(cos(phi0_rho)), sign(plusDirection ? 1 : -1), sx(-sinTheta * sinPhi0*sign),
+                                                            sy(sinTheta * cosPhi0*sign), sz(cosTheta), intersectionPoints(nz * nr * nphi, false),
+                                                            intescetionPointsCenter(nz*nr*nphi, false),
+                                                            nz(nz), nr(nr), nphi(nphi), crossAxis(false), t_epsilon(t_epsilon), 
+                                                            t_epsilon_first(t_epsilon_first), rhoLarmor(rhoLarmor), count_centers(count_centers),
+                                                            lineWork(false)
 {
     if (nz == 0 || nz == 0 || nphi == 0)
         return;
@@ -79,9 +86,11 @@ Line::Line(
     lineWork = createDataArray(nz, nr, nphi, zArray, rArray, phiArray);
 
     if (lineWork)
-        for (LineData id : data) // заполнить точки пересечения
+        for (const LineData &id : data) // заполнить точки пересечения
+        {
             intersectionPoints[id.index.getIndex(nz, nr)] = true;
-
+            intescetionPointsCenter[id.indexCenter.getIndex(nz, nr)] = true;
+        }
 }
 
 inline double Line::getTR(double r, double tPrevious, int l) const
@@ -162,8 +171,8 @@ bool Line::checkBoundaryR(const std::vector<Boundary> &boundaryArray, Boundary::
 LineData Line::traceLine(uint nz, uint nr, uint nphi, const darray &zArray, const darray &rArray, const darray &phiArray, double &tPrevious,
                          CellIndex &index, std::vector<Boundary> &bPrevious)
 {
-    double z_current = z00 + tPrevious * sz;
-    double r_current = getRPoint(tPrevious);
+    //double z_current = z00 + tPrevious * sz;
+    //double r_current = getRPoint(tPrevious);
     double phi_current = getPhiPoint(tPrevious);
 
     double s = 0;
@@ -258,10 +267,23 @@ bool Line::createDataArray(uint nz, uint nr, uint nphi,
     double tPrevious = 0.;
     crossAxis = false;
     CellIndex index(0, iR_crit, 0);
+    CellIndex indexCenter(nz, nr, nphi);
     {
         index.iZ = findIndex(zArray, nz, z00);
         index.iPhi = findIndex(phiArray, nphi, getPhiPoint(0.));
         index.iR = findIndex(rArray, nr, Rmax, false);
+    }
+    if (count_centers)
+    {
+        indexCenter.iZ = findIndex(zArray, nz, z00);
+        indexCenter.iPhi = findIndex(phiArray, nphi, getPhiPoint(0., 1));
+        indexCenter.iR = findIndex(rArray, nr, getRLarmorPoint(Rmax), false);
+    }
+
+    if (indexCenter.errorIndex())
+    {
+        std::cerr << "ларморовский центр не попал в ячейку\n";
+        return false;
     }
 
     ns = 0;
@@ -270,7 +292,9 @@ bool Line::createDataArray(uint nz, uint nr, uint nphi,
     std::vector <Boundary> previousBoundaries(N_PREV_BOUNDARIES, Boundary());
     data.reserve(4*nr);
     while (index.iZ != nz && index.iR != iR_crit+1) {
-        data.push_back(traceLine(nz, nr, nphi, zArray, rArray, phiArray, tPrevious, index, previousBoundaries));
+        LineData data0 = traceLine(nz, nr, nphi, zArray, rArray, phiArray, tPrevious, index, previousBoundaries);
+        data0.indexCenter = indexCenter;
+        data.push_back(data0);
         ns++;
         if (ns > nr*nz*nphi)
             return false;
