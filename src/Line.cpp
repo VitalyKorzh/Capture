@@ -50,10 +50,11 @@ Line::Line(
         return;
 
     Rmax = rArray.back();
+    iR_crit = nr-1;
     if (rMax > 0. && rMax < Rmax)
     {
-        uint iR = findIndex(rArray, nr, rMax);
-        Rmax = rArray[iR+1];
+        iR_crit = findIndex(rArray, nr, rMax, false);
+        Rmax = rArray[iR_crit+1];
     }
 
     zmin = zArray.front();
@@ -263,7 +264,7 @@ bool Line::createDataArray(uint nz, uint nr, uint nphi,
 {
     double tPrevious = 0.;
     crossAxis = false;
-    uint iR = nr-1;
+    uint iR = iR_crit;
     uint iZ = 0;
     uint iPhi = 0;
 
@@ -291,7 +292,7 @@ bool Line::createDataArray(uint nz, uint nr, uint nphi,
     const uint N_PREV_BOUNDARIES = 4;
     std::vector <Boundary> previousBoundaries(N_PREV_BOUNDARIES, Boundary());
     data.reserve(4*nr);
-    while (iZ != nz && iR != nr) {
+    while (iZ != nz && iR != iR_crit+1) {
         //std::cout << "iz: " << iZ << " ir: " << iR << " iphi: " << iPhi << "\n";
         data.push_back(traceLine(nz, nr, nphi, zArray, rArray, phiArray, tPrevious, iZ, iR, iPhi, previousBoundaries));
         ns++;

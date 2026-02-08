@@ -93,7 +93,7 @@ private:
 
     bool readPosition(std::istream &in, double &rho, double &z, double &phi);
     bool readParticle(std::istream &in, double &E, uint &Z, uint &M);
-    bool readAxis(std::istream &in, darray &axis, uint &size, const std::string &name);
+    bool readAxis(std::istream &in, darray &axis, uint &size, const std::string &name, bool isNew=false);
     bool readMesh(std::istream &in);
     bool readCount(std::istream &in);
 

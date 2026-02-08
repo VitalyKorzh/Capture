@@ -21,6 +21,7 @@ bool InputReader::readInjector(std::istream &in)
     double E = 0;
 
     bool plusDirection = true;
+    double Rinjection = -1.;
 
     std::string line;
     if (!getline(in, line, true, true))
@@ -33,6 +34,7 @@ bool InputReader::readInjector(std::istream &in)
         StringReader::getUnsignedParameter(line, "particles ", nParticles);
         StringReader::getDoubleParameter(line, "r0 ", r0);
         StringReader::getDoubleParameter(line, "sigma ", sigma);
+        StringReader::getDoubleParameter(line, "r-injection ", Rinjection);
 
         if (line.find("minus-direction") != std::string::npos)
             plusDirection = false;
@@ -94,7 +96,7 @@ bool InputReader::readInjector(std::istream &in)
     theta *= M_PI / 180.;
     deltaTheta *= M_PI / 180.;
 
-    injectors.push_back(Injector(rho, phi, z, sigma, r0, theta, deltaTheta, nParticles, E, M, Z, plusDirection));
+    injectors.push_back(Injector(rho, phi, z, sigma, r0, theta, deltaTheta, Rinjection, nParticles, E, M, Z, plusDirection));
 
     return true;
 }
@@ -152,6 +154,16 @@ InputReader::InputReader(std::istream &in)
     {
         work = false;
         errorMessage("не указан count");
+    }
+
+    for (Injector &inj : injectors)
+    {
+        for (uint ir = 0; ir < nr; ir++)
+            if (inj.Rinjection > rArray[ir] && inj.Rinjection <= rArray[ir+1])
+            {
+                inj.Rinjection = rArray[ir+1];
+                break;
+            }
     }
 
 }
@@ -400,7 +412,7 @@ bool InputReader::readParticle(std::istream &in, double &E, uint &Z, uint &M)
 }
 
 
-bool InputReader::readAxis(std::istream &in, darray &axis, uint &size, const std::string &name)
+bool InputReader::readAxis(std::istream &in, darray &axis, uint &size, const std::string &name, bool isNew)
 {
     std::string line;
     skip(in, line, true);
@@ -411,8 +423,9 @@ bool InputReader::readAxis(std::istream &in, darray &axis, uint &size, const std
             errorMessage("число разбиений должно n[>=1]");
             return false;
         }
-        axis.clear();
-        axis.reserve(size+1);
+        if (isNew)
+            axis.clear();
+        axis.reserve(axis.size()+size+1);
         for (uint i = 0; i < size+1; i++) 
         {
             double val;
@@ -422,6 +435,8 @@ bool InputReader::readAxis(std::istream &in, darray &axis, uint &size, const std
                 errorMessage("сетка по " + name + " задается по возрастанию");
                 return false;
             }
+            else if (axis.size() != 0 && i == 0 && val <= axis.back())
+                continue;
             axis.push_back(val);
         }
     }
@@ -432,8 +447,9 @@ bool InputReader::readAxis(std::istream &in, darray &axis, uint &size, const std
             errorMessage("число разбиений должно n[>=1]");
             return false;
         }
-        axis.clear();
-        axis.reserve(size+1);
+        if (isNew)
+            axis.clear();
+        axis.reserve(axis.size()+size+1);
 
         double min = 0;
         double max = 0;
@@ -476,6 +492,8 @@ bool InputReader::readAxis(std::istream &in, darray &axis, uint &size, const std
         errorMessage("не удалось прочитать разбиение по " + name);
         return false;
     }
+
+    size = axis.size()-1;
 
     return true;
 }

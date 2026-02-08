@@ -191,7 +191,7 @@ void Counter::count()
 
         if (r0 == 0. && dtheta == 0.) {
             Line line(rho, injector.theta, phi,  injector.z, nz, nr, nphi, zArray, rArray,  phiArray, reader.t_epsilon, reader.t_epsilon_first, 
-                        injector.plusDirection, injector.getRhoLarmor(reader.Bcenter));
+                        injector.plusDirection, injector.getRhoLarmor(reader.Bcenter), injector.Rinjection);
 
             sArray = fillSArray(line);
 
@@ -242,7 +242,7 @@ void Counter::count()
 
 
                 Line line(rho_new, theta_new, phi_new,  z_new, nz, nr, nphi, zArray, rArray,  phiArray, reader.t_epsilon, reader.t_epsilon_first, 
-                                direction, injector.getRhoLarmor(reader.Bcenter));
+                                direction, injector.getRhoLarmor(reader.Bcenter), injector.Rinjection);
                 if (line.getLineWork())
                     process(line, injector, distGamma(gen));
                 else {
@@ -297,6 +297,7 @@ void Counter::printStartInfo() const
         os << "# \t\tsigma=" << injector.sigma << "\n";
         os << "# \t\tr0=" << injector.r0 << "\n";
         os << "# \t\tdtheta=" << injector.deltaTheta*180./M_PI << "\n";
+        os << "# \t\tr-injection=" << (injector.Rinjection < 0 ? rArray.back() : injector.Rinjection) << "\n";
         os << "# \t\tposition\n";
         os << "# \t\t\trho=" << injector.rho << "\n";
         os << "# \t\t\tz=" << injector.z << "\n";

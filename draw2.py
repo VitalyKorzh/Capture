@@ -9,13 +9,14 @@ import sys
 
 class Injector:
 
-    def __init__(self, rho, phi, z0, theta, dtheta, r0, E, Z, M, sign):
+    def __init__(self, rho, phi, z0, theta, dtheta, r0, Rinjection, E, Z, M, sign):
         self.rho = rho
         self.phi = phi
         self.z0 = z0
         self.theta = theta
         self.dtheta = dtheta
         self.r0 = r0
+        self.Rinjection = Rinjection
         self.E = E
         self.Z = Z
         self.M = M
@@ -140,6 +141,8 @@ class Draw:
                     line = file.readline()
                     dtheta = float(line.split("=")[-1]) * np.pi / 180.
                     line = file.readline()
+                    Rinjection = float(line.split('=')[-1])
+                    line = file.readline()
                     line = file.readline()
                     rho = float([i for i in line.split('=')][-1])
                     line = file.readline()
@@ -172,7 +175,7 @@ class Draw:
                     print("injection %d l: %f" %(nInjector, 2.*np.sqrt(rmax*rmax-rho*rho) / np.sin(theta)))
                     nInjector+=1
 
-                    data['injectors'].append(Injector(rho, phi, z0, theta, dtheta, r0, E, Z, M, sign))
+                    data['injectors'].append(Injector(rho, phi, z0, theta, dtheta, r0, Rinjection, E, Z, M, sign))
 
 
                 line = file.readline()
@@ -343,7 +346,7 @@ class Draw:
             sign = injector.sign
 
             if (self.drawInjectorLine):
-                self.__drawLine(ax, rho, phi, theta, z0, self.rArray[-1], sign, injector) # рисуем линию инжекции
+                self.__drawLine(ax, rho, phi, theta, z0, injector.Rinjection, sign, injector) # рисуем линию инжекции
             if (self.drawCircleRho and not rho in listRho and rho != 0.):
                 self.__drawCircle(ax, 0, 0, z0, rho, linestyle="--", linewidth=1) # рисуем окружность радиусом rho
                 listRho.append(rho)

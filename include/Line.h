@@ -105,6 +105,7 @@ private:
     double zmax;
 
     double t_crit;
+    uint iR_crit;
     bool crossAxis;
 
     const double t_epsilon;

@@ -14,6 +14,7 @@ struct Injector
     double r0;
     double theta;
     double deltaTheta;
+    double Rinjection;
     unsigned particles;
 
     double E;
@@ -22,8 +23,10 @@ struct Injector
     bool plusDirection;
     int sign;
 
-    Injector(double rho, double phi, double z, double sigma, double r0, double theta, double deltaTheta, unsigned particles, double E=0., uint M=1, uint Z=1, bool plusDirection=true) : rho(rho), phi(phi), z(z), sigma(sigma),
-                                                                                                r0(r0), theta(theta), deltaTheta(deltaTheta), particles(particles), E(E), M(M), Z(Z), plusDirection(plusDirection),
+
+    Injector(double rho, double phi, double z, double sigma, double r0, double theta, double deltaTheta, double Rinjection, unsigned particles, double E=0., uint M=1, uint Z=1, bool plusDirection=true) : rho(rho), phi(phi), z(z), sigma(sigma),
+                                                                                                r0(r0), theta(theta), deltaTheta(deltaTheta), Rinjection(Rinjection), 
+                                                                                                particles(particles), E(E), M(M), Z(Z), plusDirection(plusDirection),
                                                                                                 sign(plusDirection ? 1 : -1)
     {}
 
