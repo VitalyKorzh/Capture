@@ -1,11 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
-#from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.cm as cm
-#from matplotlib import colors
 import sys
-#from matplotlib import colormaps
-#from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 class Injector:
 
@@ -316,7 +312,7 @@ class Draw:
 
                     ax.plot3D(np.ones(self.Npoints)*self.zArray[iz], r1*np.cos(phi), r1*np.sin(phi), color=color, linewidth=linewidth)
                     ax.plot3D(np.ones(self.Npoints)*self.zArray[iz], r2*np.cos(phi), r2*np.sin(phi), color=color, linewidth=linewidth)
-                    #if iz == nz-1:
+
                     ax.plot3D(np.ones(self.Npoints)*self.zArray[iz+1], r1*np.cos(phi), r1*np.sin(phi), color=color, linewidth=linewidth)
                     ax.plot3D(np.ones(self.Npoints)*self.zArray[iz+1], r2*np.cos(phi), r2*np.sin(phi), color=color, linewidth=linewidth)
 
