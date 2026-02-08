@@ -9,7 +9,7 @@ struct CellIndex
     uint iR;
     uint iPhi;
 
-    CellIndex(uint iZ, uint iR, uint iPhi) : iZ(iZ), iR(iR), iPhi(iPhi)
+    CellIndex(uint iZ=-1, uint iR=-1, uint iPhi=-1) : iZ(iZ), iR(iR), iPhi(iPhi)
     {}
 
     uint getIndex(uint nz, uint nr) const { return iR + nr*iZ + nr*nz*iPhi; }

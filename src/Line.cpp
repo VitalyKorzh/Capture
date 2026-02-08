@@ -89,7 +89,8 @@ Line::Line(
         for (const LineData &id : data) // заполнить точки пересечения
         {
             intersectionPoints[id.index.getIndex(nz, nr)] = true;
-            intescetionPointsCenter[id.indexCenter.getIndex(nz, nr)] = true;
+            if (!id.indexCenter.errorIndex())
+                intescetionPointsCenter[id.indexCenter.getIndex(nz, nr)] = true;
         }
 }
 
@@ -184,9 +185,7 @@ LineData Line::traceLine(uint nz, uint nr, uint nphi, const darray &zArray, cons
     double phi1 = phiArray[index.iPhi];
     double phi2 = phiArray[index.iPhi+1];
 
-    const uint iZprev = index.iZ;
-    const uint iRprev = index.iR;
-    const uint iPhiprev = index.iPhi;
+    CellIndex indexPrev = index;
 
     double t_r1 = getTR(r1, tPrevious);
     double t_r2 = getTR(r2, t_r1 >= 0. ? tPrevious : t_crit+1.);
@@ -245,7 +244,7 @@ LineData Line::traceLine(uint nz, uint nr, uint nphi, const darray &zArray, cons
     for (uint ii = index_boundaries; ii < bPrevious.size(); ii++)
         bPrevious[ii].type = Boundary::IntersectionType::None;
 
-    LineData data(iZprev, iRprev, iPhiprev, s);
+    LineData data(indexPrev, s);
 
     if (index.iR == nr+1) // луч прошел через ось
     {
@@ -260,27 +259,18 @@ LineData Line::traceLine(uint nz, uint nr, uint nphi, const darray &zArray, cons
     return data;
 }
 
-void Line::traceCenter(uint nz, uint nr, uint nphi, 
+LineData Line::traceLineCenter(uint nz, uint nr, uint nphi, 
                         const darray &zArray, const darray &rArray, const darray &phiArray, 
-                        double t_old, double t_new, CellIndex &index)
+                        double tPrevious, CellIndex &index, CellIndex &indexCenter, 
+                        std::vector <Boundary> &bPrevious)
 {
-    const int l = 1;
-    // double r1 = rArray[index.iR];
-    // double r2 = rArray[index.iR+1];
-    // double z1 = zArray[index.iZ];
-    // double z2 = zArray[index.iZ+1];
-    // double phi1 = phiArray[index.iPhi];
-    // double phi2 = phiArray[index.iPhi+1];
+    double s = 0.;
 
-    double r_current = getRPoint(t_new, l);
-    double z_current = getZPoint(t_new, l);
-    double phi_current = getPhiPoint(t_new, l);
+    CellIndex indexPrev = index;
+    CellIndex indexCenterPrev = indexCenter;
 
-
-    index.iR = findIndex(rArray, nr, r_current);
-    index.iZ = findIndex(zArray, nz, z_current);
-    index.iPhi = findIndex(phiArray, nphi, phi_current);
-
+    LineData data(indexPrev, s, indexCenterPrev);
+    return data;
 }
 
 bool Line::createDataArray(uint nz, uint nr, uint nphi, 
@@ -291,7 +281,7 @@ bool Line::createDataArray(uint nz, uint nr, uint nphi,
     crossAxis = false;
     CellIndex index(0, iR_crit, 0);
     CellIndex indexCenter(nz, nr, nphi);
-    //rhoLarmor = 0;
+
     { //поиск начального положения луча
         index.iZ = findIndex(zArray, nz, z00);
         index.iPhi = findIndex(phiArray, nphi, getPhiPoint(0.));
@@ -317,11 +307,9 @@ bool Line::createDataArray(uint nz, uint nr, uint nphi,
     std::vector <Boundary> previousBoundaries(N_PREV_BOUNDARIES, Boundary());
     data.reserve(4*nr);
     while (index.iZ != nz && index.iR != iR_crit+1) {
-        double tOld = tPrevious;
-        LineData data0 = traceLine(nz, nr, nphi, zArray, rArray, phiArray, tPrevious, index, previousBoundaries);
-        if (count_centers)
-            traceCenter(nz, nr, nphi, zArray, rArray, phiArray, tOld, tPrevious, indexCenter);
-        data0.indexCenter = indexCenter;
+        LineData data0 = count_centers ?
+            traceLineCenter(nz, nr, nphi, zArray, rArray, phiArray, tPrevious, index, indexCenter, previousBoundaries) :
+            traceLine(nz, nr, nphi, zArray, rArray, phiArray, tPrevious, index, previousBoundaries);
         data.push_back(data0);
         ns++;
         if (ns > nr*nz*nphi)

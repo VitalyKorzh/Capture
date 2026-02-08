@@ -18,6 +18,9 @@ struct LineData
     LineData(uint iZ=0, uint iR=0, uint iPhi=0, double s=0) : 
     index(iZ, iR, iPhi), indexCenter(iZ,iR,iPhi), s(s)
     {}
+    LineData(const CellIndex &index, double s, const CellIndex &indexCenter=CellIndex()) :
+    index(index), indexCenter(indexCenter), s(s) 
+    {} 
 
 };
 
@@ -143,9 +146,9 @@ private:
                         const darray &rArray, const darray &phiArray, 
                         double &tPrevious, CellIndex &index, std::vector <Boundary> &bPrevious); // сместить луч на одну позицию
 
-    void traceCenter(uint nz, uint nr, uint nphi, const darray &zArray, 
+    LineData traceLineCenter(uint nz, uint nr, uint nphi, const darray &zArray, 
                         const darray &rArray, const darray &phiArray, 
-                        double t_old, double t_new, CellIndex &index);
+                        double tPrevious, CellIndex &index, CellIndex &indexCenter, std::vector <Boundary> &bPrevious);
 
 
     bool createDataArray(uint nz, uint nr, uint nphi, const darray &zArray, 
