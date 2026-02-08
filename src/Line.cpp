@@ -260,6 +260,29 @@ LineData Line::traceLine(uint nz, uint nr, uint nphi, const darray &zArray, cons
     return data;
 }
 
+void Line::traceCenter(uint nz, uint nr, uint nphi, 
+                        const darray &zArray, const darray &rArray, const darray &phiArray, 
+                        double t_old, double t_new, CellIndex &index)
+{
+    const int l = 1;
+    // double r1 = rArray[index.iR];
+    // double r2 = rArray[index.iR+1];
+    // double z1 = zArray[index.iZ];
+    // double z2 = zArray[index.iZ+1];
+    // double phi1 = phiArray[index.iPhi];
+    // double phi2 = phiArray[index.iPhi+1];
+
+    double r_current = getRPoint(t_new, l);
+    double z_current = getZPoint(t_new, l);
+    double phi_current = getPhiPoint(t_new, l);
+
+
+    index.iR = findIndex(rArray, nr, r_current);
+    index.iZ = findIndex(zArray, nz, z_current);
+    index.iPhi = findIndex(phiArray, nphi, phi_current);
+
+}
+
 bool Line::createDataArray(uint nz, uint nr, uint nphi, 
                             const darray &zArray, const darray &rArray, 
                             const darray &phiArray)
@@ -268,22 +291,24 @@ bool Line::createDataArray(uint nz, uint nr, uint nphi,
     crossAxis = false;
     CellIndex index(0, iR_crit, 0);
     CellIndex indexCenter(nz, nr, nphi);
-    {
+    //rhoLarmor = 0;
+    { //поиск начального положения луча
         index.iZ = findIndex(zArray, nz, z00);
         index.iPhi = findIndex(phiArray, nphi, getPhiPoint(0.));
         index.iR = findIndex(rArray, nr, Rmax, false);
     }
-    if (count_centers)
+
+    if (count_centers) // поиск начального положения луча центров
     {
         indexCenter.iZ = findIndex(zArray, nz, z00);
         indexCenter.iPhi = findIndex(phiArray, nphi, getPhiPoint(0., 1));
         indexCenter.iR = findIndex(rArray, nr, getRLarmorPoint(Rmax), false);
-    }
 
-    if (indexCenter.errorIndex())
-    {
-        std::cerr << "ларморовский центр не попал в ячейку\n";
-        return false;
+        if (indexCenter.errorIndex()) // пока не будет работать если вышла за границу
+        {
+            std::cerr << "ларморовский центр не попал в ячейку\n";
+            return false;
+        }
     }
 
     ns = 0;
@@ -292,7 +317,10 @@ bool Line::createDataArray(uint nz, uint nr, uint nphi,
     std::vector <Boundary> previousBoundaries(N_PREV_BOUNDARIES, Boundary());
     data.reserve(4*nr);
     while (index.iZ != nz && index.iR != iR_crit+1) {
+        double tOld = tPrevious;
         LineData data0 = traceLine(nz, nr, nphi, zArray, rArray, phiArray, tPrevious, index, previousBoundaries);
+        if (count_centers)
+            traceCenter(nz, nr, nphi, zArray, rArray, phiArray, tOld, tPrevious, indexCenter);
         data0.indexCenter = indexCenter;
         data.push_back(data0);
         ns++;

@@ -143,6 +143,10 @@ private:
                         const darray &rArray, const darray &phiArray, 
                         double &tPrevious, CellIndex &index, std::vector <Boundary> &bPrevious); // сместить луч на одну позицию
 
+    void traceCenter(uint nz, uint nr, uint nphi, const darray &zArray, 
+                        const darray &rArray, const darray &phiArray, 
+                        double t_old, double t_new, CellIndex &index);
+
 
     bool createDataArray(uint nz, uint nr, uint nphi, const darray &zArray, 
                         const darray &rArray, const darray &phiArray);

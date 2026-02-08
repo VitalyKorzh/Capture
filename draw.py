@@ -287,7 +287,7 @@ class Draw:
         phi0 = np.linspace(0, np.pi*2, self.Npoints)
         ax.plot3D(np.ones(self.Npoints)*z0, rho*np.cos(phi)+r0*np.cos(phi0), rho*np.sin(phi) + r0*np.sin(phi0), linestyle, color=self.colorInjector, linewidth=linewidth)
 
-    def __drawMesh(self, ax, value):
+    def __drawMesh(self, ax, value, intersection):
 
         for iphi in range(self.nphi):
             for iz in range(self.nz):
@@ -304,7 +304,7 @@ class Draw:
                     linewidth = self.linewidthMesh
                     color = self.colorMesh
 
-                    if self.intersection[self.__getIndex(iz, ir, iphi)]:
+                    if intersection[self.__getIndex(iz, ir, iphi)]:
                         linewidth = self.linewidthInter
                         color = self.__getColor(value[self.__getIndex(iz, ir, iphi)], 0, max(value))
                     elif not self.drawNotInter:
@@ -336,8 +336,8 @@ class Draw:
         ax = fig.add_subplot(111, projection='3d')
 
         if (self.drawMesh):
-            pass
-            self.__drawMesh(ax, self.concetration)
+            self.__drawMesh(ax, self.concetrationCenter, self.intersectionCenter)
+            self.__drawMesh(ax, self.concetration, self.intersection)
 
         listRho = []
         for injector in self.injectors:
@@ -438,18 +438,20 @@ class Draw:
         self.nr = len(self.rArray) - 1
         self.nphi = len(self.phiArray) - 1
 
-        while len(self.intersection) < self.nr*self.nz*self.nphi:
-            self.intersection.append(False)
-        while len(self.nCapture) < self.nr*self.nz*self.nphi:
-            self.nCapture.append(0.)
+        # while len(self.intersection) < self.nr*self.nz*self.nphi:
+        #     self.intersection.append(False)
+        # while len(self.nCapture) < self.nr*self.nz*self.nphi:
+        #     self.nCapture.append(0.)
 
 
         self.concetration = np.zeros(self.nphi*self.nz*self.nr)
+        self.concetrationCenter = np.zeros(self.nphi*self.nz*self.nr)
 
         for iphi in range(self.nphi):
             for iz in range(self.nz):
                 for ir in range(self.nr):
                     self.concetration[self.__getIndex(iz, ir, iphi)] = self.nCapture[self.__getIndex(iz, ir, iphi)] / self.__volume(iz, ir, iphi)
+                    self.concetrationCenter[self.__getIndex(iz, ir, iphi)] = self.nCaptureCenter[self.__getIndex(iz, ir, iphi)] / self.__volume(iz, ir, iphi)
 
         self.drawMesh = drawMesh
         self.drawInjectorLine = drawInjectorLine
@@ -499,6 +501,6 @@ if __name__ == '__main__':
 
     fileName = sys.argv[1]
 
-    draw = Draw(fileName, drawNotInter=False, drawLarmorCenterLine=False)
+    draw = Draw(fileName, drawNotInter=False, drawLarmorCenterLine=True)
 
     draw.show(drawCapFromR=True, drawFromLine=True, draw3d=True)
