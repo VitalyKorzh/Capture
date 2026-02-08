@@ -2,6 +2,7 @@
 #define __LINE_H__
 
 #include <vector>
+#include "CellIndex.h"
 
 typedef std::vector<double> darray;
 typedef std::vector<unsigned> uiarray;
@@ -11,12 +12,13 @@ typedef unsigned uint;
 
 struct LineData
 {
-    uint iZ;
-    uint iR;
-    uint iPhi;
+    // uint iZ;
+    // uint iR;
+    // uint iPhi;
+    CellIndex index;
     double s;
     LineData(uint iZ=0, uint iR=0, uint iPhi=0, double s=0) : 
-    iZ(iZ), iR(iR), iPhi(iPhi), s(s)
+    index(iZ, iR, iPhi), s(s)
     {}
 
 };
@@ -129,7 +131,7 @@ private:
     inline double getTZ(double z, int l=0) const;
     inline double getTPhi(double phi, int l=0) const;
 
-    void getNewIndex(const Boundary &boundary, uint &iZ, uint &iR, uint &iPhi);
+    void getNewIndex(const Boundary &boundary, CellIndex &index);
 
 
     bool checkBoundary(const std::vector <Boundary> &boundaryArray, const Boundary & boundary, uint index=0) const;
@@ -137,7 +139,7 @@ private:
 
     LineData traceLine(uint nz, uint nr, uint nphi, const darray &zArray, 
                         const darray &rArray, const darray &phiArray, 
-                        double &tPrevious, uint &iZ, uint &iR, uint &iPhi, std::vector <Boundary> &bPrevious); // сместить луч на одну позицию
+                        double &tPrevious, CellIndex &index, std::vector <Boundary> &bPrevious); // сместить луч на одну позицию
 
 
     bool createDataArray(uint nz, uint nr, uint nphi, const darray &zArray, 

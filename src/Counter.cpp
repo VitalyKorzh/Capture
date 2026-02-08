@@ -37,9 +37,9 @@ void Counter::process(const Line &line, const Injector &injector, double gamma, 
     for (uint is = 0; is < ns; is++)
     {
         const LineData &data = line.getData()[is];
-        uint ir = data.iR;
-        uint iz = data.iZ;
-        uint iphi = data.iPhi;
+        uint ir = data.index.iR;
+        uint iz = data.index.iZ;
+        uint iphi = data.index.iPhi;
         intersectionCell[getIndex(iz, ir, iphi)] = true;
         integral += data.s*ni[getIndex(iz, ir, 0)]*injector.sigma*reader.normaDensity;
         P2 = 1. - exp(-integral);
@@ -72,7 +72,7 @@ darray Counter::fillSArray(const Line &line) const
     for (uint i = 0; i < ns; i++)
     {
         sArray[1+i] = sArray[i] + line.getData()[i].s;
-        sArray[1+ns+i] = ni[getIndex(line.getData()[i].iZ, line.getData()[i].iR, 0)];
+        sArray[1+ns+i] = ni[getIndex(line.getData()[i].index.iZ, line.getData()[i].index.iR, 0)];
     }
 
     return sArray;

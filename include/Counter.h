@@ -37,7 +37,9 @@ private:
 
     void clearPrevious();
 
-    uint getIndex(uint iz, uint ir, uint iphi) const { return ir + nr*iz + nr*nz*iphi; }
+    uint getIndex(const CellIndex &index) const { return index.getIndex(nz, nr); }
+    uint getIndex(uint iz, uint ir, uint iphi) const { return getIndex(CellIndex(iz, ir, iphi)); }
+    //uint getIndex(uint iz, uint ir, uint iphi) const { return ir + nr*iz + nr*nz*iphi; }
 
     void process(const Line &line, const Injector &injector, double gamma, darray *sArray=nullptr);
 
@@ -45,6 +47,7 @@ private:
     void printSArray(const darray &sArray, uint i) const;
 
     double cellVolume(uint iz, uint ir, uint iphi) const;
+    double cellVolume(const CellIndex &index) const { return cellVolume(index.iZ, index.iR, index.iPhi); }
     void countIonN();
     
     //uiarray convertToAxialSymmetry() const;
