@@ -11,17 +11,21 @@ void Counter::clearPrevious()
 {
     nFlyby = 0;
     nParticles = 0;
-    for (uint i = 0; i < nCap.size(); i++)
-        nCap[i] = 0;
 
-    for (uint i = 0; i < intersectionCell.size(); i++)
+    for (uint i = 0; i < nz*nr*nphi; i++)
+    {
         intersectionCell[i] = false;
+        intersectionCellCenter[i] = false;
+        nCap[i] = 0;
+        nCapCenter[i] = 0;
+    }
 }
 
 Counter::Counter(std::istream &in, std::ostream &os) : reader(in), os(os), nz(reader.nz), nr(reader.nr), nphi(reader.nphi),
                                                        ni(reader.ni), zArray(reader.zArray), rArray(reader.rArray),
                                                        phiArray(reader.phiArray), injectors(reader.injectors), nParticles(0), intersectionCell(nr * nz * nphi, false),
-                                                       nCap(nz * nr * nphi), nFlyby(0)
+                                                       intersectionCellCenter(nr*nz*nphi, false),
+                                                       nCap(nz * nr * nphi, 0), nCapCenter(nz*nr*nphi, 0), nFlyby(0)
 {
     os.precision(reader.precision);
     os << std::scientific;
@@ -111,9 +115,9 @@ double Counter::cellVolume(uint iz, uint ir, uint iphi) const
     return (phi2-phi1)*(r2-r1)*(z2-z1)*(r1+r2)/2.;
 }
 
-void Counter::countIonN()
+void Counter::countIonN(const uiarray &array, darray &result)
 {
-    nF.resize(nr, 0.);
+    result.resize(nr, 0.);
 
     for (uint ir = 0; ir < nr; ir++)
     {
@@ -124,10 +128,10 @@ void Counter::countIonN()
 
         for (uint iphi = 0; iphi < nphi; iphi++) {
             for (uint iz = 0; iz < nz; iz++)
-                Nions += nCap[getIndex(iz, ir, iphi)];
+                Nions += array[getIndex(iz, ir, iphi)];
         }
 
-        nF[ir] = Nions / (volume * (nParticles-nFlyby));
+        result[ir] = Nions / (volume * (nParticles-nFlyby));
     }
 
 }
@@ -224,7 +228,8 @@ void Counter::count()
 
     if (extra_flyby != 0)
         std::cerr << "extra-flyby: " << extra_flyby << "\n"; 
-    countIonN();
+    countIonN(nCap, nF);
+    countIonN(nCapCenter, nFCenter);
 }
 
 void Counter::printStartInfo() const 
@@ -297,7 +302,11 @@ void Counter::printResult() const
         for (uint iz = 0; iz < nz; iz++)
         {
             for (uint ir=0; ir < nr; ir++)
-                os << getnCap(getIndex(iz, ir, iphi)) << " " << (intersectionCell[getIndex(iz, ir, iphi)] ? 1 : 0) << " ";
+            {
+                uint index = getIndex(iz, ir, iphi);
+                os << getnCap(index, nCap) << " " << getnCap(index, nCap) << " " << (intersectionCell[index] ? 1 : 0) << " " 
+                << (intersectionCellCenter[index] ? 1 : 0) << " ";
+            }
             os << "\n";
         }
     }
@@ -305,7 +314,7 @@ void Counter::printResult() const
     os << "#\n";
     os << "#n from r:\n";
     for (uint ir = 0; ir < nr; ir++)
-        os << nF[ir] << "\n";
+        os << nF[ir] << " " << nFCenter[ir] << "\n";
     os << "\n";
 }
 

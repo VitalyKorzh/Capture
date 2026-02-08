@@ -29,8 +29,11 @@ private:
 
     uint nParticles;
     barray intersectionCell;
+    barray intersectionCellCenter;
     uiarray nCap;
+    uiarray nCapCenter;
     darray nF;
+    darray nFCenter;
     uint nFlyby;
 
     uiarray ncapAxial;
@@ -47,7 +50,7 @@ private:
 
     double cellVolume(uint iz, uint ir, uint iphi) const;
     double cellVolume(const CellIndex &index) const { return cellVolume(index.iZ, index.iR, index.iPhi); }
-    void countIonN();
+    void countIonN(const uiarray &array, darray &result);
     
 public:
     Counter(std::istream &in=std::cin, std::ostream &os=std::cout);
@@ -65,7 +68,7 @@ public:
     const barray & getIntersectionCell() const { return intersectionCell; }
 
 
-    double getnCap(uint index) const { return ((double) nCap[index]) / (nParticles-nFlyby); }
+    double getnCap(uint index, const uiarray &array) const { return ((double) array[index]) / (nParticles-nFlyby); }
     double getnFlyby() const { return ((double) nFlyby) / nParticles; }
 
     bool isReadSuccess() const { return reader.work; }
