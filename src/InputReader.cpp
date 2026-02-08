@@ -63,9 +63,9 @@ bool InputReader::readInjector(std::istream &in)
     }
 
 
-    if (theta <= 0. || theta > 90.)
+    if (theta <= 0. || theta >= 180.)
     {
-        errorMessage("угол в неправильном диапозоне 0 < theta <= 90");
+        errorMessage("угол в неправильном диапозоне 0 < theta < 180.");
         return false;
     }
 

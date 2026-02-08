@@ -102,7 +102,7 @@ inline double Line::getTR(double r, double tPrevious, int l) const
 
 inline double Line::getTZ(double z, int l) const
 {
-    if (cosTheta > 1e-12)
+    if (std::abs(cosTheta) > 1e-12)
         return (z - z00) / cosTheta;
     else
         return -1.; // очень большой луч не пересикает
