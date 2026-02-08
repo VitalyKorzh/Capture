@@ -132,40 +132,6 @@ void Counter::countIonN()
 
 }
 
-/*uiarray Counter::convertToAxialSymmetry() const
-{
-    uiarray ncapAxial(nr*nz, 0);
-
-    // for (uint iphi0=0; iphi0 < nphi; iphi0++)
-    // {
-    //     for (uint iphi=0; iphi < nphi; iphi++)
-    //     {
-    //         for (uint iz=0; iz < nz; iz++)
-    //         {
-    //             for (uint ir=0; ir < nr; ir++)
-    //             {
-    //                 ncapAxial[getIndex(iz, ir, iphi)] += nCap[getIndex(iz, ir, (iphi+iphi0) % nphi )];
-    //             }
-    //         }
-    //     }
-    // }
-
-    for (uint iz=0; iz < nz; iz++)
-    {
-        for (uint ir=0; ir < nr; ir++)
-        {
-            double sumPhi = 0;
-            for (uint iphi=0; iphi < nphi; iphi++)
-            {
-                sumPhi += nCap[getIndex(iz, ir, iphi)];
-            }
-            ncapAxial[getIndex(iz, ir, 0)] = sumPhi;
-        }
-    }
-
-    return ncapAxial;
-}*/
-
 void Counter::count()
 {
     TimeProfiler t_cout("time count full");

@@ -162,10 +162,6 @@ bool Line::checkBoundaryR(const std::vector<Boundary> &boundaryArray, Boundary::
 LineData Line::traceLine(uint nz, uint nr, uint nphi, const darray &zArray, const darray &rArray, const darray &phiArray, double &tPrevious,
                          CellIndex &index, std::vector<Boundary> &bPrevious)
 {
-
-    // double x_current = x00 + tPrevious * sx;
-    // double y_current = y00 + tPrevious * sy;
-
     double z_current = z00 + tPrevious * sz;
     double r_current = getRPoint(tPrevious);
     double phi_current = getPhiPoint(tPrevious);

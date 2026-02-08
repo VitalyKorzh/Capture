@@ -39,7 +39,6 @@ private:
 
     uint getIndex(const CellIndex &index) const { return index.getIndex(nz, nr); }
     uint getIndex(uint iz, uint ir, uint iphi) const { return getIndex(CellIndex(iz, ir, iphi)); }
-    //uint getIndex(uint iz, uint ir, uint iphi) const { return ir + nr*iz + nr*nz*iphi; }
 
     void process(const Line &line, const Injector &injector, double gamma, darray *sArray=nullptr);
 
@@ -50,7 +49,6 @@ private:
     double cellVolume(const CellIndex &index) const { return cellVolume(index.iZ, index.iR, index.iPhi); }
     void countIonN();
     
-    //uiarray convertToAxialSymmetry() const;
 public:
     Counter(std::istream &in=std::cin, std::ostream &os=std::cout);
     void count();
