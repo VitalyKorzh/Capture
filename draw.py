@@ -483,7 +483,7 @@ class Draw:
 
         print("\nncap =", self.ncap, '%')
 
-    def drawPointLine(self, fileName, step=1):
+    def drawPointLine(self, fileName, step=1, Z=0):
 
         fig = plt.figure(figsize=(200, 200))
         ax = fig.add_subplot(111, projection='3d')
@@ -507,9 +507,19 @@ class Draw:
 
         index = 0
         print('start')
+        X = []
+        Y = []
         for r0, z0, theta0, phi0,sign0 in zip(rho, z, theta, phi, sign):
             if index % step == 0:
                 self.__drawLine(ax, r0, phi0, theta0, z0, 15.6, sign0)
+                sx = -np.sin(theta0)*np.sin(phi0)*sign0
+                sy = np.sin(theta0)*np.cos(phi0)*sign0
+                sz = np.cos(theta0)
+                t_Z = (Z - z0) / sz
+
+                X.append(r0*np.cos(phi0)+t_Z*sx)
+                Y.append(r0*np.sin(phi0)+t_Z*sy)
+                
             index+=1
 
 
@@ -520,6 +530,19 @@ class Draw:
         ax.set_zlim(-coeff*self.rArray[-1], coeff*self.rArray[-1])
 
 
+        fig0, axes = plt.subplots(nrows=2, ncols=1)
+        nbins=20
+        axes[0].scatter(X, Y)
+        axes[1].hist(X, alpha=0.5, bins=50)
+        axes[1].hist(Y, alpha=0.5, bins=50)
+        axes[1].grid()
+        axes[0].grid()
+        axes[1].set(xlabel='X', ylabel='counts')
+        axes[0].set_xlim(-coeff*self.rArray[-1], coeff*self.rArray[-1])
+        axes[0].set_ylim(-coeff*self.rArray[-1], coeff*self.rArray[-1])
+        axes[0].set(xlabel='X', ylabel='Y')
+        axes[0].set_aspect('equal')
+
     def show(self, draw3d=True, drawFromLine=True, drawCapFromR=True, drawPoints=False):
 
         if draw3d:
@@ -529,7 +552,7 @@ class Draw:
         if drawCapFromR:
             self.drawCapFromR(self.nF, self.nFCenter)
         if drawPoints:
-            self.drawPointLine("build/points.txt", 5000)
+            self.drawPointLine("build/points.txt", 1000)
         
         plt.show()
 
