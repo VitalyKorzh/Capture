@@ -336,7 +336,7 @@ class Draw:
         ax = fig.add_subplot(111, projection='3d')
 
         if (self.drawMesh):
-            self.__drawMesh(ax, self.concetrationCenter, self.intersectionCenter)
+            #self.__drawMesh(ax, self.concetrationCenter, self.intersectionCenter)
             self.__drawMesh(ax, self.concetration, self.intersection)
 
         listRho = []
@@ -483,8 +483,44 @@ class Draw:
 
         print("\nncap =", self.ncap, '%')
 
-        
-    def show(self, draw3d=True, drawFromLine=True, drawCapFromR=True):
+    def drawPointLine(self, fileName, step=1):
+
+        fig = plt.figure(figsize=(200, 200))
+        ax = fig.add_subplot(111, projection='3d')
+
+        rho = []
+        z = []
+        theta = []
+        phi = []
+        sign = []
+
+        with open(fileName, 'r') as f:
+
+            data = [i.split() for i in f]
+
+            for i in range(len(data)):
+                rho.append(float(data[i][0]))
+                theta.append(float(data[i][1]))
+                z.append(float(data[i][2]))
+                phi.append(float(data[i][3]))
+                sign.append(int(data[i][4]))
+
+        index = 0
+        print('start')
+        for r0, z0, theta0, phi0,sign0 in zip(rho, z, theta, phi, sign):
+            if index % step == 0:
+                self.__drawLine(ax, r0, phi0, theta0, z0, 15.6, sign0)
+            index+=1
+
+
+        coeff = 1.2
+        ax.set(xlabel='z, см', ylabel='x, см', zlabel='y, см')
+        ax.set_xlim(coeff*self.zArray[0], coeff*self.zArray[-1])
+        ax.set_ylim(-coeff*self.rArray[-1], coeff*self.rArray[-1])
+        ax.set_zlim(-coeff*self.rArray[-1], coeff*self.rArray[-1])
+
+
+    def show(self, draw3d=True, drawFromLine=True, drawCapFromR=True, drawPoints=False):
 
         if draw3d:
             self.draw3D()
@@ -492,7 +528,8 @@ class Draw:
             self.drawCapFromLine()
         if drawCapFromR:
             self.drawCapFromR(self.nF, self.nFCenter)
-        
+        if drawPoints:
+            self.drawPointLine("build/points.txt", 5000)
         
         plt.show()
 
@@ -503,4 +540,4 @@ if __name__ == '__main__':
 
     draw = Draw(fileName, drawNotInter=False, drawLarmorCenterLine=True)
 
-    draw.show(drawCapFromR=True, drawFromLine=True, draw3d=False)
+    draw.show(drawCapFromR=True, drawFromLine=True, draw3d=False, drawPoints=False)

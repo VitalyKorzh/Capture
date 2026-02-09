@@ -155,6 +155,10 @@ void Counter::count()
 
     uint index = 0;
 
+
+    //std::ofstream fout;
+    //fout.open("points.txt");
+
     uint extra_flyby = 0;
     for (Injector injector : injectors)
     {
@@ -224,7 +228,7 @@ void Counter::count()
                     continue;
                 }
 
-
+                //fout << rho_new << " " << theta_new << " " << z_new << " " << phi_new << " " << (direction ? -1 : 1) << "\n";
                 Line line(rho_new, theta_new, phi_new,  z_new, nz, nr, nphi, zArray, rArray,  phiArray, reader.t_epsilon, reader.t_epsilon_first, 
                                 direction, injector.getRhoLarmor(reader.Bcenter), injector.Rinjection, reader.count_centers);
                 if (line.getLineWork())
@@ -239,7 +243,7 @@ void Counter::count()
         nParticles += injector.particles;
         index++;
     }
-
+    //fout.close();
     if (extra_flyby != 0)
         std::cerr << "extra-flyby: " << extra_flyby << "\n"; 
     countIonN(nCap, nF);
