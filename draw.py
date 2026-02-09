@@ -503,4 +503,4 @@ if __name__ == '__main__':
 
     draw = Draw(fileName, drawNotInter=False, drawLarmorCenterLine=True)
 
-    draw.show(drawCapFromR=True, drawFromLine=True, draw3d=True)
+    draw.show(drawCapFromR=True, drawFromLine=True, draw3d=False)

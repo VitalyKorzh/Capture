@@ -198,6 +198,12 @@ void Counter::count()
                 double x = r0 == 0. ? rho*cos(phi) : dist_x(gen);
                 double y = r0 == 0. ? rho*sin(phi) : dist_y(gen);
                 double theta_new = dtheta == 0. ? injector.theta : dist_theta(gen);
+                if (theta_new > M_PI || theta_new < 0) {
+                    nFlyby++;
+                    extra_flyby++;
+                    continue;
+                }
+
                 double rho_new = x*cos0 + y*sin0;
                 double t_new = (y*cos0 - x*sin0)/(injector.sign*sin(theta_new));
                 double z_new = injector.z - t_new*cos(theta_new);
@@ -209,7 +215,9 @@ void Counter::count()
                     direction = !direction;
                 }
 
-                if (rho_new >= rArray.back()) // не расчитвать такой луч
+                double rInj = injector.Rinjection < 0 ? rArray.back() : injector.Rinjection;
+
+                if (rho_new >= std::min(rArray.back(), rInj)) // не расчитвать такой луч
                 {
                     nFlyby++;
                     extra_flyby++;
@@ -246,13 +254,13 @@ void Counter::printStartInfo() const
     os << "# mesh\n";
     os << "# \tz-axis\n# \t\tn " << nz << "\n";
     for (const double & z0 : zArray)
-        os << "# \t\t\t" << z0 << "\n";
+        os << "  \t\t\t" << z0 << "\n";
     os << "# \tr-axis\n# \t\tn " << nr << "\n";
     for (const double & r0 : rArray)
-        os << "# \t\t\t" << r0 << "\n";
+        os << "  \t\t\t" << r0 << "\n";
     os << "# \tphi-axis\n# \t\tn " << nphi << "\n";
     for (const double & phi0 : phiArray)
-        os << "# \t\t\t" << phi0 << "\n";
+        os << "  \t\t\t" << phi0 << "\n";
     os << "# \tni\n";
     for (uint iz = 0; iz < nz; iz++)
     {

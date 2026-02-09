@@ -67,8 +67,10 @@ Line::Line(
     zmin = zArray.front();
     zmax = zArray.back();
 
-    if (Rmax <= rho)
+    if (Rmax <= rho) {
+        std::cerr << "вышла за радиальную границу Rmax <= rho\n";
         return;
+    }
 
     d = sqrt(Rmax*Rmax - rho*rho);
     t_crit = d / sinTheta;
@@ -77,11 +79,15 @@ Line::Line(
     y00 = rho*sinPhi0 - d * cosPhi0*sign;
     z00 = z0_rho - d * cosTheta / sinTheta;
 
-    if (z00 < zmin || z00 >= zmax)
+    if (z00 < zmin || z00 >= zmax) {
+        std::cerr << "вышли за левую границу оси z\n";
         return;
+    }
 
-    if (z0_rho + d * cosTheta / sinTheta > zmax)
+    if (z0_rho + d * cosTheta / sinTheta > zmax) {
+        std::cerr << "вышли за правую границу оси z\n";
         return;
+    }
 
     lineWork = createDataArray(nz, nr, nphi, zArray, rArray, phiArray);
 
