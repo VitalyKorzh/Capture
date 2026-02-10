@@ -175,6 +175,7 @@ class Draw:
                     nInjector+=1
 
                     data['injectors'].append(Injector(rho, phi, z0, theta, dtheta, r0, Rinjection, E, Z, M, sign))
+                    print('rl = ', data['injectors'][-1].getRhoLarmor(self.Bcenter))
 
 
                 line = file.readline()
@@ -213,8 +214,8 @@ class Draw:
                         data['ncaptureCenter'].append(values[4*ir+1])
                         data['intersection'].append(bool(values[4*ir+2]))
                         data['intersectionCenter'].append(bool(values[4*ir+3]))
-                        if values[4*ir+2]:
-                            print("iz:", iz, "ir:", ir, "iphi:", iphi)
+                        #if values[4*ir+2]:
+                        #    print("iz:", iz, "ir:", ir, "iphi:", iphi)
             
 
             while not 'n from r:' in line:
@@ -341,7 +342,6 @@ class Draw:
 
         listRho = []
         for injector in self.injectors:
-
             rho = injector.rho
             phi = injector.phi
             theta = injector.theta
