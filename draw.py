@@ -571,7 +571,8 @@ class Draw:
         if nr < 0 and nr < self.nr:
             nr = self.nr
 
-        leff = self.zArray[-1] - self.zArray[0]
+        #leff = self.zArray[-1] - self.zArray[0]
+        leff = 1. #не будет нормировать радиальный профиль на длину z
 
         nf = np.array(self.nFCenter[1:nr+1]) * np.pi * leff * reff*reff
 

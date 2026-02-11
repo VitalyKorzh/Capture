@@ -130,7 +130,7 @@ void Counter::countIonN(const uiarray &array, darray &result)
         double r1 = rArray[ir];
         double r2 = rArray[ir+1];
         uint Nions = 0;
-        double volume = M_PI*(zArray.back()-zArray.front())*(r2*r2-r1*r1);
+        double volume = M_PI*(r2*r2-r1*r1);
 
         for (uint iphi = 0; iphi < nphi; iphi++) {
             for (uint iz = 0; iz < nz; iz++)
