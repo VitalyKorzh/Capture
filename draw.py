@@ -567,14 +567,14 @@ class Draw:
         plt.show()
 
 
-    def polynomial(self, reff : float, n : int, nr=-1, draw=False):
+    def polynomial(self, n : int, nr=-1, draw=False):
         if nr < 0 and nr < self.nr:
             nr = self.nr
 
         #leff = self.zArray[-1] - self.zArray[0]
         leff = 1. #не будет нормировать радиальный профиль на длину z
 
-        nf = np.array(self.nFCenter[1:nr+1]) * np.pi * leff * reff*reff
+        nf = np.array(self.nFCenter[1:nr+1])
 
         r = np.zeros(nr)
 
@@ -592,7 +592,7 @@ class Draw:
         r0 = np.linspace(rmin, rmax, 1000)
         y0 = np.array([polynomial(coeff, i) for i in r0])
 
-        Y = y0 * r0 * 2. / reff / reff
+        Y = y0 * r0 * 2 * np.pi
 
         integral = np.trapz(Y, r0)
 
@@ -624,9 +624,8 @@ if __name__ == '__main__':
         draw.show(drawCapFromR=True, drawFromLine=True, draw3d=False, drawPoints=False)
     elif type0 == 'pol':
         n = int(input('вести степень полинома: '))
-        r = float(input('вести нормировчный радиус: '))
         nr = int(input('вести число точек сетки по r: '))
         draw0 = float(input('отрисовать для проверки: '))
 
-        draw.polynomial(r, n, nr, draw0)
+        draw.polynomial(n, nr, draw0)
 
