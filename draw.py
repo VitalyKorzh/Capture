@@ -3,6 +3,16 @@ import numpy as np
 import matplotlib.cm as cm
 import sys
 
+def polynomial(coeff, x):
+
+    sum = 0
+    value = 1
+    for an in coeff:
+        sum += an*value
+        value *= x
+
+    return sum
+
 class Injector:
 
     def __init__(self, rho, phi, z0, theta, dtheta, r0, Rinjection, E, Z, M, sign):
@@ -557,10 +567,65 @@ class Draw:
         plt.show()
 
 
+    def polynomial(self, reff : float, n : int, nr=-1, draw=False):
+        if nr < 0 and nr < self.nr:
+            nr = self.nr
+
+        leff = self.zArray[-1] - self.zArray[0]
+
+        nf = np.array(self.nFCenter[1:nr+1]) * np.pi * leff * reff*reff
+
+        r = np.zeros(nr)
+
+
+        for i in range(nr):
+            r[i] = (self.rArray[i] + self.rArray[i+1]) / 2.
+        
+        print(r)
+        print(nf)
+
+        coeff = np.polyfit(r, nf, n)[::-1]
+
+        rmin = r[0]
+        rmax = r[-1]
+        r0 = np.linspace(rmin, rmax, 1000)
+        y0 = np.array([polynomial(coeff, i) for i in r0])
+
+        Y = y0 * r0 * 2. / reff / reff
+
+        integral = np.trapz(Y, r0)
+
+        print('integral 2*pi*r*n dr / (pi * reff^2) =', integral)
+
+        for i, j in zip(coeff, range(len(coeff))):
+            print('a' + str(j) + '=' + str(i))
+
+        if draw:
+
+            plt.scatter(r, nf, s=10)
+            plt.plot(r0, y0)
+            plt.grid()
+            plt.show()
+
+
 if __name__ == '__main__':
+
+    type0 = 'draw'
+
+    if len(sys.argv) > 2:
+        type0 = sys.argv[2]
 
     fileName = sys.argv[1]
 
     draw = Draw(fileName, drawNotInter=False, drawLarmorCenterLine=True)
 
-    draw.show(drawCapFromR=True, drawFromLine=True, draw3d=False, drawPoints=False)
+    if type0 == 'draw':
+        draw.show(drawCapFromR=True, drawFromLine=True, draw3d=False, drawPoints=False)
+    elif type0 == 'pol':
+        n = int(input('вести степень полинома: '))
+        r = float(input('вести нормировчный радиус: '))
+        nr = int(input('вести число точек сетки по r: '))
+        draw0 = float(input('отрисовать для проверки: '))
+
+        draw.polynomial(r, n, nr, draw0)
+
