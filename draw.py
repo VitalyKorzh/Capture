@@ -180,7 +180,7 @@ class Draw:
                     else:
                         sign = -1
 
-                    rmax = data['rAxis'][-1]
+                    rmax = data['rAxis'][-1] if Rinjection < 0 or Rinjection > data['rAxis'][-1] else Rinjection
                     print("injection %d l: %f" %(nInjector, 2.*np.sqrt(rmax*rmax-rho*rho) / np.sin(theta)))
                     nInjector+=1
 
