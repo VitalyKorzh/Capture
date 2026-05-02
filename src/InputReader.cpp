@@ -23,6 +23,8 @@ bool InputReader::readInjector(std::istream &in)
     bool plusDirection = true;
     double Rinjection = -1.;
 
+    double nLines = 1;
+
     std::string line;
     if (!getline(in, line, true, true))
         return false;
@@ -35,6 +37,7 @@ bool InputReader::readInjector(std::istream &in)
         StringReader::getDoubleParameter(line, "r0 ", r0);
         StringReader::getDoubleParameter(line, "sigma ", sigma);
         StringReader::getDoubleParameter(line, "r-injection ", Rinjection);
+        StringReader::getDoubleParameter(line, "lines ", nLines);
 
         if (line.find("minus-direction") != std::string::npos)
             plusDirection = false;
@@ -93,10 +96,16 @@ bool InputReader::readInjector(std::istream &in)
         return false;
     }
 
+    if (nLines == 0)
+    {
+        errorMessage("число линий инжектора lines > 0");
+        return false;
+    }
+
     theta *= M_PI / 180.;
     deltaTheta *= M_PI / 180.;
 
-    injectors.push_back(Injector(rho, phi, z, sigma, r0, theta, deltaTheta, Rinjection, nParticles, E, M, Z, plusDirection));
+    injectors.push_back(Injector(rho, phi, z, sigma, r0, theta, deltaTheta, Rinjection, nParticles, E, M, Z, plusDirection, nLines));
 
     return true;
 }

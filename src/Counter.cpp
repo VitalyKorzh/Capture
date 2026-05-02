@@ -2,7 +2,7 @@
 #include <cmath>
 #include <random>
 #include <iostream>
-
+#include <forward_list>
 #include "TimeProfiler.h"
 #include "PhysicValues.h"
 #include "Line.h"
@@ -195,16 +195,20 @@ void Counter::count()
             double cos0 = cos(phi);
             double sin0 = sin(phi);
 
-            
-            for (uint it = 0; it < injector.particles; it++)
+            std::forward_list <Line> lines;
+
+            uint N_LINES_GENERATE = injector.nLines;
+            const uint part_in_line = injector.particles / N_LINES_GENERATE;
+            bool lineError = false;
+            for (uint l = 0; l < N_LINES_GENERATE; l++)
             {
                 bool direction = injector.plusDirection;
                 double x = r0 == 0. ? rho*cos(phi) : dist_x(gen);
                 double y = r0 == 0. ? rho*sin(phi) : dist_y(gen);
                 double theta_new = dtheta == 0. ? injector.theta : dist_theta(gen);
                 if (theta_new > M_PI || theta_new < 0) {
-                    nFlyby++;
-                    extra_flyby++;
+                    nFlyby+=part_in_line;
+                    extra_flyby+=part_in_line;
                     continue;
                 }
 
@@ -223,20 +227,75 @@ void Counter::count()
 
                 if (rho_new >= std::min(rArray.back(), rInj)) // не расчитвать такой луч
                 {
-                    nFlyby++;
-                    extra_flyby++;
+                    nFlyby+=part_in_line;
+                    extra_flyby+=part_in_line;
                     continue;
                 }
 
-                //fout << rho_new << " " << theta_new << " " << z_new << " " << phi_new << " " << (direction ? -1 : 1) << "\n";
-                Line line(rho_new, theta_new, phi_new,  z_new, nz, nr, nphi, zArray, rArray,  phiArray, reader.t_epsilon, reader.t_epsilon_first, 
-                                direction, injector.getRhoLarmor(reader.Bcenter), injector.Rinjection, reader.count_centers);
-                if (line.getLineWork())
-                    process(line, injector, distGamma(gen));
-                else {
-                    std::cerr << "не удалось построить линию!\n";
+
+                lines.emplace_front(rho_new, theta_new, phi_new,  z_new, nz, nr, nphi, zArray, rArray,  phiArray, reader.t_epsilon, reader.t_epsilon_first, 
+                direction, injector.getRhoLarmor(reader.Bcenter), injector.Rinjection, reader.count_centers);
+
+                if (!lines.begin()->getLineWork())
+                {
+                    std::cerr << "не удалось построить линию, поменяйти сетку!\n";
+                    lineError = true;
                     break;
                 }
+
+            }
+
+            auto iline = lines.begin();
+            
+            for (uint it = 0; it < injector.particles; it++)
+            {
+
+                Line &line = *iline;
+
+                process(line, injector, distGamma(gen));
+
+                iline++;
+                if (iline == lines.end())
+                    iline = lines.begin();
+                // bool direction = injector.plusDirection;
+                // double x = r0 == 0. ? rho*cos(phi) : dist_x(gen);
+                // double y = r0 == 0. ? rho*sin(phi) : dist_y(gen);
+                // double theta_new = dtheta == 0. ? injector.theta : dist_theta(gen);
+                // if (theta_new > M_PI || theta_new < 0) {
+                //     nFlyby++;
+                //     extra_flyby++;
+                //     continue;
+                // }
+
+                // double rho_new = x*cos0 + y*sin0;
+                // double t_new = (y*cos0 - x*sin0)/(injector.sign*sin(theta_new));
+                // double z_new = injector.z - t_new*cos(theta_new);
+                // double phi_new = phi;
+                // if (rho_new < 0)
+                // {
+                //     rho_new *= -1.;
+                //     phi_new += M_PI;
+                //     direction = !direction;
+                // }
+
+                // double rInj = injector.Rinjection < 0 ? rArray.back() : injector.Rinjection;
+
+                // if (rho_new >= std::min(rArray.back(), rInj)) // не расчитвать такой луч
+                // {
+                //     nFlyby++;
+                //     extra_flyby++;
+                //     continue;
+                // }
+
+                // //fout << rho_new << " " << theta_new << " " << z_new << " " << phi_new << " " << (direction ? -1 : 1) << "\n";
+                // Line line(rho_new, theta_new, phi_new,  z_new, nz, nr, nphi, zArray, rArray,  phiArray, reader.t_epsilon, reader.t_epsilon_first, 
+                //                 direction, injector.getRhoLarmor(reader.Bcenter), injector.Rinjection, reader.count_centers);
+                // if (line.getLineWork())
+                //     process(line, injector, distGamma(gen));
+                // else {
+                //     std::cerr << "не удалось построить линию!\n";
+                //     break;
+                // }
             }
         }
 
@@ -285,6 +344,7 @@ void Counter::printStartInfo() const
         os << "# \t\ttheta=" << injector.theta*180./M_PI << "\n";
         os << "# \t\tsigma=" << injector.sigma << "\n";
         os << "# \t\tr0=" << injector.r0 << "\n";
+        os << "# \t\tlines=" << injector.nLines  << "\n";
         os << "# \t\tdtheta=" << injector.deltaTheta*180./M_PI << "\n";
         os << "# \t\tr-injection=" << (injector.Rinjection < 0 ? rArray.back() : injector.Rinjection) << "\n";
         os << "# \t\tposition\n";

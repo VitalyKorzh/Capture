@@ -148,6 +148,7 @@ class Draw:
                     line = file.readline()
                     r0 = float([i for i in line.split('=')][-1])
                     line = file.readline()
+                    line = file.readline()
                     dtheta = float(line.split("=")[-1]) * np.pi / 180.
                     line = file.readline()
                     Rinjection = float(line.split('=')[-1])
