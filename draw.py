@@ -622,7 +622,7 @@ if __name__ == '__main__':
     draw = Draw(fileName, drawNotInter=False, drawLarmorCenterLine=True)
 
     if type0 == 'draw':
-        draw.show(drawCapFromR=True, drawFromLine=True, draw3d=False, drawPoints=False)
+        draw.show(drawCapFromR=True, drawFromLine=False, draw3d=False, drawPoints=False)
     elif type0 == 'pol':
         n = int(input('вести степень полинома: '))
         nr = int(input('вести число точек сетки по r: '))

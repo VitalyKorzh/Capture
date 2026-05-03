@@ -391,8 +391,15 @@ void Counter::printResult() const
 
     os << "#\n";
     os << "#n from r:\n";
-    for (uint ir = 0; ir < nr; ir++)
+    double integral_1 = 0;
+    double integral_2 = 0;
+    for (uint ir = 0; ir < nr; ir++){
+        integral_1 += M_PI*(rArray[ir+1]*rArray[ir+1]-rArray[ir]*rArray[ir])*nF[ir];
+        integral_2 += M_PI*(rArray[ir+1]*rArray[ir+1]-rArray[ir]*rArray[ir])*nFCenter[ir];
         os << nF[ir] << " " << nFCenter[ir] << "\n";
+    }
+    os << "# integral nF 2pirdr = " << integral_1 << "\n";
+    os << "# integral nFCenter 2pirdr = " << integral_2 << "\n";
     os << "\n";
 }
 
