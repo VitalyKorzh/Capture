@@ -124,7 +124,7 @@ double Counter::cellVolume(uint iz, uint ir, uint iphi) const
 void Counter::countIonN(const uiarray &array, darray &result)
 {
     result.resize(nr, 0.);
-
+    uint nCaptureParticles = 0.;
     for (uint ir = 0; ir < nr; ir++)
     {
         double r1 = rArray[ir];
@@ -138,7 +138,10 @@ void Counter::countIonN(const uiarray &array, darray &result)
         }
 
         result[ir] = Nions / (volume * (nParticles-nFlyby));
+        nCaptureParticles += Nions;
     }
+
+    //std::cout << nParticles-nFlyby << " " << nCaptureParticles << "\n";
 
 }
 
@@ -247,7 +250,7 @@ void Counter::count()
 
             auto iline = lines.begin();
             
-            for (uint it = 0; it < injector.particles; it++)
+            for (uint it = 0; it < injector.particles-extra_flyby; it++)
             {
 
                 Line &line = *iline;
