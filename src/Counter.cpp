@@ -382,7 +382,7 @@ void Counter::printResult() const
             for (uint ir=0; ir < nr; ir++)
             {
                 uint index = getIndex(iz, ir, iphi);
-                os << getnCap(index, nCap) << " " << getnCap(index, nCap) << " " << (intersectionCell[index] ? 1 : 0) << " " 
+                os << getnCap(index, nCap) << " " << getnCap(index, nCapCenter) << " " << (intersectionCell[index] ? 1 : 0) << " " 
                 << (intersectionCellCenter[index] ? 1 : 0) << " ";
             }
             os << "\n";
