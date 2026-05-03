@@ -44,8 +44,9 @@ Line::Line(
                                                             theta(theta), phi0_rho(phi0_rho), z0_rho(z0_rho),
                                                             sinTheta(sin(theta)), cosTheta(cos(theta)), sinPhi0(sin(phi0_rho)),
                                                             cosPhi0(cos(phi0_rho)), sign(plusDirection ? 1 : -1), sx(-sinTheta * sinPhi0*sign),
-                                                            sy(sinTheta * cosPhi0*sign), sz(cosTheta), intersectionPoints(nz * nr * nphi, false),
-                                                            intescetionPointsCenter(nz*nr*nphi, false),
+                                                            sy(sinTheta * cosPhi0*sign), sz(cosTheta), 
+                                                            //intersectionPoints(nz * nr * nphi, false),
+                                                            //intescetionPointsCenter(nz*nr*nphi, false),
                                                             nz(nz), nr(nr), nphi(nphi), crossAxis(false), t_epsilon(t_epsilon), 
                                                             t_epsilon_first(t_epsilon_first), rhoLarmor(rhoLarmor), count_centers(count_centers),
                                                             lineWork(false)
@@ -91,13 +92,13 @@ Line::Line(
 
     lineWork = createDataArray(nz, nr, nphi, zArray, rArray, phiArray);
 
-    if (lineWork)
-        for (const LineData &id : data) // заполнить точки пересечения
-        {
-            intersectionPoints[id.index.getIndex(nz, nr)] = true;
-            if (!id.indexCenter.errorIndex())
-                intescetionPointsCenter[id.indexCenter.getIndex(nz, nr)] = true;
-        }
+    // if (lineWork)
+    //     for (const LineData &id : data) // заполнить точки пересечения
+    //     {
+    //         intersectionPoints[id.index.getIndex(nz, nr)] = true;
+    //         if (!id.indexCenter.errorIndex())
+    //             intescetionPointsCenter[id.indexCenter.getIndex(nz, nr)] = true;
+    //     }
 }
 
 inline double Line::getTR(double r, double tPrevious, int l) const

@@ -101,8 +101,8 @@ private:
 
 
     uint ns;
-    barray intersectionPoints; // точки пересечения линии
-    barray intescetionPointsCenter; // точки пересечения линии ценртов
+    //barray intersectionPoints; // точки пересечения линии
+    //barray intescetionPointsCenter; // точки пересечения линии ценртов
     std::vector <LineData> data; // положение линии
 
     uint nz;
@@ -174,7 +174,7 @@ public:
     bool getLineWork() const { return lineWork; }
     const std::vector<LineData> & getData() const { return data; }
     uint getNs() const { return ns; }
-    const barray & getIntersectionPoints() const { return intersectionPoints; }
+    //const barray & getIntersectionPoints() const { return intersectionPoints; }
 };
 
 #endif
