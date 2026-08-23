@@ -9,7 +9,7 @@ bool StringReader::findParameterInLine(const std::string &line, const std::strin
         return false;
 
     size_t index = line.find(parameterName);
-    if (index != std::string::npos && (index == 0 || line[index-1] == ' ')) 
+    if (index != std::string::npos && (index == 0 || line[index-1] == ' ' || line[index-1] == '\t')) 
     {
         return true;
     }
@@ -92,8 +92,9 @@ bool StringReader::getIntParameter(const std::string &line, std::string paramete
         } catch (const std::out_of_range & e) {   
             return false;                                       
         }     
-    else
+    else {
         return false;
+    }
     return true;
 }
 
@@ -145,5 +146,44 @@ bool StringReader::getLineParameter(const std::string &line, std::string paramet
     }
     else
         return false;
+    return true;
+}
+
+bool StringReader::getVectorParameter(const std::string &line, std::string parameterName, std::vector <double> &val, int size_min)
+{
+    if(findParameterInLine(line, parameterName)) 
+    {
+        try {
+            //val = "";
+            //val = line.substr(line.find(parameterName) + parameterName.size());
+            val.clear();
+            if (size_min > 0)
+                val.reserve(size_min);
+            std::string val_text = line.substr(line.find(parameterName) + parameterName.size());
+            std::istringstream iss(val_text);
+
+            std::string v;
+            while (iss >> v)
+            {
+                val.push_back(std::stod(v));
+            }
+            if (size_min > 0)
+            {
+                if (val.size() < (size_t) size_min)
+                {
+                    val.clear();
+                    return false;
+                }
+            }
+
+        } catch (const std::invalid_argument & e) {
+            return false;
+        } catch (const std::out_of_range & e) {
+            return false;
+        }
+    }
+    else {
+        return false;
+    }
     return true;
 }

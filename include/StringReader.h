@@ -2,6 +2,7 @@
 #define _STRING_READER_H_
 
 #include <string>
+#include <vector>
 
 class StringReader 
 {
@@ -14,6 +15,7 @@ public:
     static bool getUnsignedLLIntParameter(const std::string &line, std::string parameterName, unsigned long long int &val);
     static bool getUnsignedParameter(const std::string &line, std::string parameterName, unsigned &val);
     static bool getLineParameter(const std::string &line, std::string parameterName, std::string &val);
+    static bool getVectorParameter(const std::string &line, std::string parameterName, std::vector <double> &val, int size_min=-1);
     virtual ~StringReader()=0;
 };
 
