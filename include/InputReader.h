@@ -14,7 +14,7 @@
 #include <list>
 #include <unordered_map>
 
-#include "StringReader.h"
+#include "StringReader/StringReader.h"
 #include "Injector.h"
 
 typedef std::vector<double> darray;

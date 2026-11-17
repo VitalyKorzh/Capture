@@ -3,6 +3,10 @@ cmake_minimum_required(VERSION 3.27.4)
 
 project(capture)
 
+
+find_package(Utilities)
+find_package(CrossSection)
+
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_BUILD_TYPE Debug)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pthread -O3")
@@ -11,3 +15,4 @@ file(GLOB SRC src/*.cpp)
 
 add_executable(${PROJECT_NAME} ${SRC})
 target_include_directories(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCE_DIR}/include)
+target_link_libraries(${PROJECT_NAME} PUBLIC CrossSection::cross-section Utilities::StringReader Utilities::Time Utilities::Vector Utilities::Physics)

@@ -1,5 +1,5 @@
 #include "InputReader.h"
-#include "StringReader.h"
+#include "StringReader/StringReader.h"
 
 #include <cmath>
 

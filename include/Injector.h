@@ -1,7 +1,7 @@
 #ifndef __INJECTOR_H__
 #define __INJECTOR_H__
 
-#include  "PhysicValues.h"
+#include "Physics/PhysValues.h"
 #include <cmath>
 
 struct Injector
@@ -35,11 +35,11 @@ struct Injector
 
 
     double getOmege(double B) const {
-        return Z*PhysicValues::ee * B / (M*PhysicValues::MP*PhysicValues::C);
+        return Z*Physics::PhysicValues::e * B / (M*Physics::PhysicValues::MP*Physics::PhysicValues::C);
     }
 
     double getV() const {
-        return sqrt(2.*E*PhysicValues::EV_TO_ERG / (M*PhysicValues::MP));
+        return sqrt(2.*E*Physics::PhysicValues::EV_TO_ERG / (M*Physics::PhysicValues::MP));
     }
 
     double  getVperp() const {

@@ -3,9 +3,11 @@
 #include <random>
 #include <iostream>
 #include <forward_list>
-#include "TimeProfiler.h"
-#include "PhysicValues.h"
+#include "Time/TimeProfiler.h"
+#include "Physics/PhysValues.h"
 #include "Line.h"
+
+using namespace Physics;
 
 void Counter::clearPrevious()
 {
